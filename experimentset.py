@@ -1,7 +1,7 @@
 import os
 import json
 import tensorflow as tf
-from keras import backend as K
+from tensorflow.keras import backend as K
 from experiment import Experiment
 
 class ExperimentSet:
@@ -11,13 +11,14 @@ class ExperimentSet:
 	def __init__(self, json_path):
 		self._json_path = json_path
 
-
+	
 	def _generate_experiments(self):
 		# Load JSON file
 		with open(self._json_path) as f:
 			configs = json.load(f)
 
 		# Add experiments
+		#For each experiment
 		for config in configs:
 			val_type = config['val_type'] if 'val_type' in config else 'holdout'
 			if val_type == 'holdout' and 'executions' in config:
@@ -26,7 +27,8 @@ class ExperimentSet:
 				executions = int(config['n_folds'])
 			else:
 				raise Exception(F"{val_type} is not a valid validation type.")
-
+			
+			#For each fold/execution in the experiment
 			for execution in range(0, executions):
 				exec_config = config.copy()
 				if 'name' in exec_config:
@@ -35,6 +37,7 @@ class ExperimentSet:
 				experiment = Experiment()
 				experiment.current_fold = execution
 				experiment.set_config(exec_config)
+				#Creates a generator with all executions and all experimets
 				yield experiment
 
 

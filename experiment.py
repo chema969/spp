@@ -1,14 +1,15 @@
-import keras
+import tensorflow as tf
 import numpy as np
 from net_keras import Net
 import os
 import pickle
 from losses import qwk_loss, make_cost_matrix, ms_n_qwk_loss
 from metrics import np_quadratic_weighted_kappa, top_2_accuracy, top_3_accuracy, \
-	minimum_sensitivity, accuracy_off1
+	minimum_sensitivity, accuracy_off1,categorical_accuracy,mean_absolute_error, \
+	omae,mean_squared_error
 from dataset2 import Dataset
 from sklearn.metrics import confusion_matrix
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 class Experiment:
 	"""
@@ -54,8 +55,8 @@ class Experiment:
 		self._ds = None
 
 		# Model and results file names
-		self.model_file = 'model.h5'
-		self.best_model_file = 'best_model.h5'
+		self.model_file = 'model.yml'
+		self.best_model_file = 'best_model.yml'
 		self.model_file_extra = 'model.txt'
 		self.csv_file = 'results.csv'
 		self.evaluation_file = 'evaluation.pickle'
@@ -435,7 +436,7 @@ class Experiment:
 				f.write('\n' + str(self.best_metric))
 
 
-		save_epoch_callback = keras.callbacks.LambdaCallback(on_epoch_end=save_epoch)
+		save_epoch_callback = tf.keras.callbacks.LambdaCallback(on_epoch_end=save_epoch)
 
 		# NNet object
 		net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
@@ -477,7 +478,7 @@ class Experiment:
 		# Compile the keras model
 		model.compile(
 			optimizer = # keras.optimizers.Nadam(lr=self.lr),
-			keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=0.9, nesterov=True),
+			tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=0.9, nesterov=True),
 			# keras.optimizers.Adam(lr=self.lr),
 			# keras.optimizers.RMSprop(lr=self.lr),
 			# keras.optimizers.Adagrad(lr=self.lr),
@@ -488,22 +489,17 @@ class Experiment:
 		# Print model summary
 		model.summary()
 
-		print(F'Training on {self._ds.size_train()} samples, validating on {self._ds.size_val()} samples.')
+		print('Training on {self._ds.size_train()} samples, validating on {self._ds.size_val()} samples.')
 
 		# Run training
-		model.fit_generator(self._ds.generate_train(self.batch_size, self.augmentation), epochs=self.epochs,
+		model.fit(self._ds.generate_train(self.batch_size, self.augmentation), epochs=self.epochs,
 							initial_epoch=start_epoch,
 							steps_per_epoch=self._ds.num_batches_train(self.batch_size),
-							callbacks=[keras.callbacks.LearningRateScheduler(lr_scheduler),
-									   #keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=25, mode='min', min_lr=1e-4, verbose=1),
-									   # keras.callbacks.ModelCheckpoint(
-										#   os.path.join(self.checkpoint_dir, self.model_file)),
+							callbacks=[tf.keras.callbacks.LearningRateScheduler(lr_scheduler),
 									   save_epoch_callback,
-									   keras.callbacks.CSVLogger(os.path.join(self.checkpoint_dir, self.csv_file),
+									   tf.keras.callbacks.CSVLogger(os.path.join(self.checkpoint_dir, self.csv_file),
 																	append=True),
-									   # keras.callbacks.TensorBoard(log_dir=self.checkpoint_dir),
-									   # keras.callbacks.TerminateOnNaN(),
-									   keras.callbacks.EarlyStopping(min_delta=0.0005, patience=40, verbose=1)
+									   tf.keras.callbacks.EarlyStopping(min_delta=0.0005, patience=40, verbose=1)
 									   ],
 							workers=self.workers,
 							use_multiprocessing=False,
@@ -581,18 +577,18 @@ class Experiment:
 		with open(os.path.join(self.checkpoint_dir, self.evaluation_file), 'wb') as f:
 			pickle.dump({'config': self.get_config(), 'metrics': all_metrics}, f)
 
+
 	def compute_metrics(self, y_true, y_pred, num_classes):
 		# Calculate metric
-		sess = keras.backend.get_session()
 		qwk = np_quadratic_weighted_kappa(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1), 0,
 										  num_classes - 1)
 		ms = minimum_sensitivity(y_true, y_pred)
-		mae = sess.run(K.mean(keras.losses.mean_absolute_error(y_true, y_pred)))
-		omae = sess.run(K.mean(keras.losses.mean_absolute_error(K.argmax(y_true), K.argmax(y_pred))))
-		mse = sess.run(K.mean(keras.losses.mean_squared_error(y_true, y_pred)))
-		acc = sess.run(K.mean(keras.metrics.categorical_accuracy(y_true, y_pred)))
-		top2 = sess.run(top_2_accuracy(y_true, y_pred))
-		top3 = sess.run(top_3_accuracy(y_true, y_pred))
+		mae = mean_absolute_error(y_true, y_pred)
+		omae = omae(y_true, y_pred)
+		mse = mean_squared_error(y_true, y_pred)
+		acc = categorical_accuracy(y_true, y_pred)
+		top2 = top_2_accuracy(y_true, y_pred)
+		top3 = top_3_accuracy(y_true, y_pred)
 		off1 = accuracy_off1(y_true, y_pred)
 		conf_mat = confusion_matrix(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1))
 

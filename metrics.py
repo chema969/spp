@@ -1,8 +1,26 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
-import keras
 import numpy as np
-from keras import backend as K
+from tensorflow.keras import backend as K
 from sklearn.metrics import confusion_matrix
+
+
+@tf.function
+def mean_absolute_error(y_true, y_pred):
+	return K.mean(tf.keras.losses.mean_absolute_error(y_true, y_pred))
+
+@tf.function
+def omae(y_true, y_pred):
+	return K.mean(tf.keras.losses.mean_absolute_error(K.argmax(y_true), K.argmax(y_pred)))
+
+@tf.function
+def mean_squared_error(y_true, y_pred):
+	return K.mean(tf.keras.losses.mean_squared_error(y_true, y_pred))
+
+@tf.function
+def categorical_accuracy(y_true, y_pred):
+	return K.mean(tf.keras.metrics.categorical_accuracy(y_true, y_pred))
+
 
 def quadratic_weighted_kappa(num_classes, cost_matrix):
 	"""
@@ -165,12 +183,13 @@ def np_quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=No
 
 	return 1.0 - numerator / denominator
 
-
+@tf.function
 def top_2_accuracy(y_true, y_pred):
-	return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
+	return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
 
+@tf.function
 def top_3_accuracy(y_true, y_pred):
-	return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
+	return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
 
 def _compute_sensitivities(y_true, y_pred):
 	if y_true.shape[1] > 1:

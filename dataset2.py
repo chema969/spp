@@ -2,7 +2,7 @@ import numpy as np
 import os
 import math
 from sklearn.model_selection import train_test_split, StratifiedKFold
-import keras
+import tensorflow as tf
 import cv2
 import pandas as pd
 from skimage.io import imread
@@ -237,7 +237,7 @@ class Dataset:
 		self._num_classes = 10
 
 		# Load data
-		(x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
+		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
 		# Save x and y
 		self._x_trainval, self._y_trainval = x_train, y_train
@@ -255,7 +255,7 @@ class Dataset:
 		self._num_classes = 100
 
 		# Load data
-		(x_train, y_train), (x_test, y_test) = keras.datasets.cifar100.load_data()
+		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
 
 		# Save x and y
 		self._x_trainval, self._y_trainval = x_train, y_train
@@ -298,7 +298,7 @@ class Dataset:
 		self._num_classes = 10
 
 		# Load data
-		(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
 		# Upscale
 		x_train = self._resize_data(x_train, 32, 32, self.num_channels)
@@ -473,7 +473,7 @@ class Dataset:
 		self._num_classes = 10
 
 		# Load data
-		(x_train, y_train), (x_test, y_test) = keras.datasets.fashion_mnist.load_data()
+		(x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
 
 		# Upscale
 		x_train = self._resize_data(x_train, 32, 32, self.num_channels)

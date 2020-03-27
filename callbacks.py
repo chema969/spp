@@ -1,10 +1,10 @@
-import keras
+import tensorflow as tf
 import numpy as np
 from sklearn.metrics import confusion_matrix, accuracy_score
 from metrics import quadratic_weighted_kappa_cm, quadratic_weighted_kappa, _compute_sensitivities
 from losses import make_cost_matrix
 
-class ComputeMetricsCallback(keras.callbacks.Callback):
+class ComputeMetricsCallback(tf.keras.callbacks.Callback):
 	"""
 	Callback that computes train and/or validation metrics for a batch.
 	Computed metrics are: accuracy, loss and QWK.
@@ -24,7 +24,7 @@ class ComputeMetricsCallback(keras.callbacks.Callback):
 			self.classes.append(i)
 
 	def _compute_metrics(self, generator, num_batches, classes):
-		sess = keras.backend.get_session()
+		sess = tf.keras.backend.get_session()
 		conf_mat = None
 		mean_acc = 0
 		mean_loss = 0
@@ -111,7 +111,7 @@ class ComputeMetricsCallback(keras.callbacks.Callback):
 
 
 
-class PrintWeightsCallback(keras.callbacks.Callback):
+class PrintWeightsCallback(tf.keras.callbacks.Callback):
 	def __init__(self, class_weights):
 		self.class_weights = class_weights
 
@@ -124,7 +124,7 @@ class PrintWeightsCallback(keras.callbacks.Callback):
 '''
  Compute class weights based on class sensitivity on the validation dataset.
 '''
-class ReweightClassesCallback(keras.callbacks.Callback):
+class ReweightClassesCallback(tf.keras.callbacks.Callback):
 	'''
 	:param validation_data: validation data tuple (x, y)
 	:param class_weights: weights list that is going to be adjusted according to sensitvity.

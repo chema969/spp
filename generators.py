@@ -1,5 +1,5 @@
-from keras.utils import Sequence, to_categorical
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import Sequence, to_categorical
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from multiprocessing import Pool
 from skimage.io import imread
 from functools import partial

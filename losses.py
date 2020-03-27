@@ -1,6 +1,5 @@
-import keras
 import numpy as np
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 def make_cost_matrix(num_ratings):
 	"""
