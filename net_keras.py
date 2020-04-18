@@ -7,7 +7,7 @@ from activations import SPP, SPPT, MPELU, RTReLU, RTPReLU, PairedReLU, EReLU, SQ
 from layers import GeometricLayer, ScaleLayer
 from resnet import Resnet_2x4
 
-from inception_resnet_v2 import InceptionResNetV2 as Irnv2
+from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2 as Irnv2
 from unimodal_extensions import _add_binom_m
 
 
