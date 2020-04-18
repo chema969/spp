@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Activation, Dropout, Flatten, Dense, Lambda
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Activation, Dropout, Flatten, Dense, Lambda,Input
 from tensorflow.keras import regularizers
 from tensorflow.keras import backend as K
 from activations import SPP, SPPT, MPELU, RTReLU, RTPReLU, PairedReLU, EReLU, SQRTActivation, CLM, RReLu, PELU, SlopedReLU, PTELU, Antirectifier, CReLU, EPReLU
@@ -32,82 +32,83 @@ class Net:
 			raise Exception('Invalid network model.')
 
 	def vgg19(self):
-		model = tf.keras.Sequential([
-			# Block 1
-			Conv2D(64, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same',
-								input_shape=(self.size, self.size, self.num_channels), data_format='channels_last'),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(64, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			MaxPooling2D(),
 
-			# Block 2
-			Conv2D(128, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(128, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			MaxPooling2D(),
+		input = tf.keras.layers.Input(shape=(self.size, self.size, self.num_channels))
+		# Block 1
+		x=Conv2D(64, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same',
+							input_shape=(self.size, self.size, self.num_channels), data_format='channels_last')(input),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(64, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=MaxPooling2D()(x),
 
-			# Block 3
-			Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			MaxPooling2D(),
+		# Block 2
+		x=Conv2D(128, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(128, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=MaxPooling2D()(x),
 
-			# Block 4
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			MaxPooling2D(),
+		# Block 3
+		x=Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(256, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=MaxPooling2D()(x),
 
-			# Block 5
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', ),
-			self.__activation(),
-			BatchNormalization(),
-			MaxPooling2D(),
+		# Block 4
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=MaxPooling2D()(x),
 
-			# Classification block
-			Flatten(),
-			Dropout(rate=self.dropout),
-			Dense(4096),
-			self.__activation(),
-			Dense(4096),
-			self.__activation(),
-		])
+		# Block 5
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=Conv2D(512, 3, strides=(1, 1), kernel_initializer='he_uniform', padding='same', )(x),
+		x=self.__activation()(x),
+		x=BatchNormalization()(x),
+		x=MaxPooling2D()(x),
 
-		model = self.__final_activation(model)
+		# Classification block
+		x=Flatten()(x),
+		x=Dropout(rate=self.dropout)(x),
+		x=Dense(4096)(x),
+		x=self.__activation()(x),
+		x=Dense(4096)(x),
+		x=self.__activation()(x),
+		
 
+		x = self.__final_activation(x)
+		model = tf.keras.Model(input, x)		
 		return model
 
 	def vgg16(self):
@@ -386,59 +387,59 @@ class Net:
 		feature_filter_size = 3
 		classif_filter_size = 4
 
-		input = tf.keras.layers.Input(shape=(self.size, self.size, self.num_channels))
+		input = Input(shape=(self.size, self.size, self.num_channels))
 
-		x = tf.keras.layers.Conv2D(32, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(input)
+		x = Conv2D(32, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(input)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.Conv2D(32, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = BatchNormalization()(x)
+		x = Conv2D(32, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.MaxPooling2D()(x)
+		x = BatchNormalization()(x)
+		x = MaxPooling2D()(x)
 
-		x = tf.keras.layers.Conv2D(64, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = Conv2D(64, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.Conv2D(64, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = BatchNormalization()(x)
+		x = Conv2D(64, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.MaxPooling2D()(x)
+		x = BatchNormalization()(x)
+		x = MaxPooling2D()(x)
 
-		x = tf.keras.layers.Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = BatchNormalization()(x)
+		x = Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.MaxPooling2D()(x)
+		x = BatchNormalization()(x)
+		x = MaxPooling2D()(x)
 
-		x = tf.keras.layers.Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = BatchNormalization()(x)
+		x = Conv2D(128, feature_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
-		x = tf.keras.layers.MaxPooling2D()(x)
+		x = BatchNormalization()(x)
+		x = MaxPooling2D()(x)
 
-		x = tf.keras.layers.Conv2D(128, classif_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
+		x = Conv2D(128, classif_filter_size, strides=(1, 1), kernel_initializer='he_uniform')(x)
 		x = self.__activation()(x)
-		x = tf.keras.layers.BatchNormalization()(x)
+		x = BatchNormalization()(x)
 
-		x = tf.keras.layers.Flatten()(x)
+		x = Flatten()(x)
 
-		x = tf.keras.layers.Dense(96)(x)
+		x = Dense(96)(x)
 
 		if self.dropout > 0:
-			x = tf.keras.layers.Dropout(rate=self.dropout)(x)
+			x = Dropout(rate=self.dropout)(x)
 
 		x = self.__final_activation(x)
 
-		model = tf.tf.keras.Model(input, x)
+		model = tf.keras.Model(input, x)
 
 		return model
 
 	def inceptionresnetv2(self):
-		input = tf.keras.layers.Input(shape=(self.size, self.size, self.num_channels))
+		input = Input(shape=(self.size, self.size, self.num_channels))
 		x = input
 		# Required size >= 75 x 75
 		size = self.size
@@ -456,7 +457,7 @@ class Net:
 
 		x = self.__final_activation(x)
 
-		model = tf.tf.keras.Model(input, x)
+		model = tf.keras.Model(input, x)
 
 		return model
 
@@ -464,7 +465,7 @@ class Net:
 		input = tf.keras.layers.Input(shape=(self.size, self.size, self.num_channels))
 		x = input
 
-		resnet = Resnet_2x4((self.size, self.size, self.num_channels), activation=self.activation)
+		resnet = Resnet_2x4((self.size, self.size, self.num_channels), activation=self.__activation())
 		x = resnet.get_net()(x)
 
 		if self.dropout > 0:
@@ -472,7 +473,7 @@ class Net:
 
 		x = self.__final_activation(x)
 
-		model = tf.tf.keras.Model(input, x)
+		model = tf.keras.Model(input, x)
 
 		return model
 
@@ -522,8 +523,8 @@ class Net:
 
 	def __final_activation(self, x):
 		if self.final_activation == 'poml':
-			x = tf.keras.layers.Dense(1)(x)
-			x = tf.keras.layers.BatchNormalization()(x)
+			x = Dense(1)(x)
+			x = BatchNormalization()(x)
 			x = CLM(self.num_classes, 'logit', self.f_a_params, use_tau=self.use_tau)(x)
 		elif self.final_activation == 'pomp':
 			x = tf.keras.layers.Dense(1)(x)
@@ -556,7 +557,7 @@ class Net:
 		elif self.final_activation == 'binomial':
 			_add_binom_m(model, self.num_classes, 1.0, 'sigm_learnable')
 		else:
-			x = tf.keras.layers.Dense(self.num_classes)(x)
+			x = Dense(self.num_classes)(x)
 			if self.prob_layer == 'geometric':
 				x = GeometricLayer()(x)
 			x = tf.keras.layers.Activation(self.final_activation)(x)

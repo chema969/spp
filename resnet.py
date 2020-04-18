@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from tensorflow.keras.regularizers import l2
-
+from activations import SPP, SPPT, MPELU, RTReLU, RTPReLU, PairedReLU, EReLU, SQRTActivation, CLM, RReLu, PELU, SlopedReLU, PTELU, Antirectifier, CReLU, EPReLU
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.initializers import Constant, he_normal
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, AveragePooling2D, \

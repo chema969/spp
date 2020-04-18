@@ -354,7 +354,7 @@ def InceptionResNetV2(include_top=True,
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = tf.keras.engine.topology.get_source_inputs(input_tensor)
+        inputs = tf.keras.utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 

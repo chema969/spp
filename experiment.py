@@ -427,9 +427,15 @@ class Experiment:
 		# Save epoch callback for training process
 		def save_epoch(epoch, logs):
 			# Check whether new metric is better than best metric
-			if (self.new_metric(logs['val_loss'])):
-				model.save(os.path.join(self.checkpoint_dir, self.best_model_file))
-				print("Best model saved.")
+			try:
+				logs['val_loss']
+			except KeyError:
+				# In case validation is not defined (For example, little datasets)
+				print("Validation loss not defined")
+			else:
+				if (self.new_metric(logs['val_loss'])):
+					model.save(os.path.join(self.checkpoint_dir, self.best_model_file))
+					print("Best model saved.")
 
 			with open(os.path.join(self.checkpoint_dir, self.model_file_extra), 'w') as f:
 				f.write(str(epoch + 1))

@@ -368,8 +368,8 @@ class CLM(tf.keras.layers.Layer):
 		a = K.pow(a, 2)
 		thresholds_param = K.concatenate([b, a], axis=0)
 		th = K.sum(
-			tf.raw_ops.MatrixBandPart(K.ones([self.num_classes - 1, self.num_classes - 1]), -1, 0) * K.reshape(
-				K.tile(thresholds_param, [self.num_classes - 1]), shape=[self.num_classes - 1, self.num_classes - 1]),
+			tf.raw_ops.MatrixBandPart(input=tf.ones([self.num_classes - 1, self.num_classes - 1]), num_lower=-1, num_upper=0) * K.reshape(
+				tf.tile(thresholds_param, [self.num_classes - 1]), shape=[self.num_classes - 1, self.num_classes - 1]),
 			axis=1)
 		return th
 
@@ -420,7 +420,7 @@ class CLM(tf.keras.layers.Layer):
 		else:
 			a3T = 1.0 / (1.0 + K.exp(-z3))
 
-		a3 = K.concatenate([a3T, K.ones([m, 1])], axis=1)
+		a3 = K.concatenate([a3T, tf.ones([m, 1])], axis=1)
 		a3 = K.concatenate([K.reshape(a3[:, 0], shape=[-1, 1]), a3[:, 1:] - a3[:, 0:-1]], axis=-1)
 
 		return a3
