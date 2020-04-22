@@ -7,7 +7,7 @@ from losses import qwk_loss, make_cost_matrix, ms_n_qwk_loss
 from metrics import np_quadratic_weighted_kappa, top_2_accuracy, top_3_accuracy, \
 	minimum_sensitivity, accuracy_off1,categorical_accuracy,mean_absolute_error, \
 	omae,mean_squared_error
-from dataset2 import Dataset
+from dataset import Dataset
 from sklearn.metrics import confusion_matrix
 from tensorflow.keras import backend as K
 
