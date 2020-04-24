@@ -4,3 +4,4 @@ vgg19.npy
 .idea/*
 !paper
 !paper/*
+*.swp
