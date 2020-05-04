@@ -23,8 +23,11 @@ class ComputeMetricsCallback(tf.keras.callbacks.Callback):
 		for i in range(0, num_classes):
 			self.classes.append(i)
 
+    """
+    Compute the mean accuracy, mean loss, quadratic weighted kappa loss 
+    and confusion matrix among all the batches
+    """
 	def _compute_metrics(self, generator, num_batches, classes):
-		sess = tf.keras.backend.get_session()
 		conf_mat = None
 		mean_acc = 0
 		mean_loss = 0
@@ -55,19 +58,22 @@ class ComputeMetricsCallback(tf.keras.callbacks.Callback):
 		mean_loss /= batch_count
 
 		metrics = {}
-
+        
 		if 'acc' in self.metrics:
 			metrics['acc'] = mean_acc
 		if 'loss' in self.metrics:
 			metrics['loss'] = mean_loss
 		if 'qwk' in self.metrics:
-			qwk = sess.run(quadratic_weighted_kappa_cm(conf_mat, self.num_classes, self.cost_matrix))
+			qwk = quadratic_weighted_kappa_cm(conf_mat, self.num_classes, self.cost_matrix)
 			metrics['qwk'] = qwk
 
 		metrics['conf_mat'] = conf_mat
 
 		return metrics
-
+ 
+    """
+    Each time an epoch is ended,  the metrics and confusion matrix are computed.
+    """
 	def on_epoch_end(self, epoch, logs={}):
 		if self.train_generator and self.train_batches:
 			train_metrics = self._compute_metrics(self.train_generator, self.train_batches, self.classes)
@@ -114,9 +120,6 @@ class ComputeMetricsCallback(tf.keras.callbacks.Callback):
 class PrintWeightsCallback(tf.keras.callbacks.Callback):
 	def __init__(self, class_weights):
 		self.class_weights = class_weights
-
-#	def on_epoch_end(self, epoch, logs={}):
-#		print(self.model.layers[-1].get_weights())
 
 	def on_epoch_begin(self, epoch, logs):
 		print(self.class_weights)

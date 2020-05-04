@@ -164,15 +164,14 @@ class PairedReLU(tf.keras.layers.Layer):
 
 
 class EReLU(tf.keras.layers.Layer):
+    """
+     Elastic Rectified Linear Units
+    """
 	def __init__(self, alpha=0.5, **kwargs):
 		super(EReLU, self).__init__(**kwargs)
 		self.alpha = alpha
 
 	def build(self, input_shape):
-		# shape = input_shape[1:]
-
-		# self.k = self.add_weight(name='k', shape=shape, dtype=K.floatx(),
-		# 						 initializer=tf.keras.initializers.RandomUniform(minval=1 - self.alpha, maxval=1 + self.alpha), trainable=False)
 
 		# Finish building
 		super(EReLU, self).build(input_shape)
@@ -211,6 +210,9 @@ class EPReLU(tf.keras.layers.Layer):
 
 
 class SQRTActivation(tf.keras.layers.Layer):
+    """
+    Square Root Based Activation Function
+    """
 	def __init__(self, **kwargs):
 		super(SQRTActivation, self).__init__(**kwargs)
 
@@ -246,17 +248,20 @@ class RReLu(tf.keras.layers.Layer):
 
 
 class PELU(tf.keras.layers.Layer):
+    """
+    Parametric Exponential Linear Unit, an evolution
+    of ELU with parameters controlling different 
+    aspects of the function
+    """
 	def __init__(self, **kwargs):
 		super(PELU, self).__init__(**kwargs)
 
 	def build(self, input_shape):
 		self.alpha = self.add_weight(name='alpha', shape=(1,), dtype=K.floatx(),
 									 initializer=tf.keras.initializers.RandomUniform(minval=0.0, maxval=1))
-		# self.alpha = K.clip(self.alpha, 0.0001, 10)
 
 		self.beta = self.add_weight(name='beta', shape=(1,), dtype=K.floatx(),
 									initializer=tf.keras.initializers.RandomUniform(minval=0.0, maxval=1))
-		# self.beta = K.clip(self.beta, 0.0001, 10)
 
 		super(PELU, self).build(input_shape)
 
@@ -341,6 +346,12 @@ class Antirectifier(tf.keras.layers.Layer):
 
 
 class CReLU(tf.keras.layers.Layer):
+    """
+    Concatenated Rectified Linear Units activation:
+    Concatenates a ReLU which selects only the positive part 
+    of the activation with a ReLU which selects only the 
+    negative part of the activation.
+    """
 	def compute_output_shape(self, input_shape):
 		shape = list(input_shape)
 		shape[-1] *= 2

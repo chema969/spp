@@ -42,28 +42,9 @@ def quadratic_weighted_kappa(num_classes, cost_matrix):
 
 		return quadratic_weighted_kappa_cm(conf_mat, num_classes, cost_matrix)
 
-		# hist_y_pred = K.reshape(
-		# 	K.bincount(y_pred, minlength=num_classes, maxlength=num_classes, dtype=K.floatx()),
-		# 	shape=[num_classes, 1])
-		# hist_y_true = K.reshape(
-		# 	K.bincount(y_true, minlength=num_classes, maxlength=num_classes, dtype=K.floatx()),
-		# 	shape=[1, num_classes])
-		#
-		# num_scored_items = K.shape(y_pred)[0]
-		#
-		# expected_count = K.matmul(hist_y_pred, hist_y_true) / K.cast(num_scored_items, dtype=K.floatx())
-		#
-		# numerator = K.reduce_sum(cost_matrix * conf_mat)
-		# denominator = K.reduce_sum(cost_matrix * expected_count)
-		#
-		# if denominator == 0:
-		# 	return 0
-		#
-		# return 1.0 - numerator / denominator
-
 	return _quadratic_weighted_kappa
 
-
+@tf.function
 def quadratic_weighted_kappa_cm(conf_mat, num_ratings, cost_matrix):
 	"""
 	Compute QWK function using confusion matrix.
@@ -191,6 +172,7 @@ def top_2_accuracy(y_true, y_pred):
 def top_3_accuracy(y_true, y_pred):
 	return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
 
+"""Function that compute sensitivity """
 def _compute_sensitivities(y_true, y_pred):
 	if y_true.shape[1] > 1:
 		y_true = np.argmax(y_true, axis=1)
@@ -206,6 +188,7 @@ def _compute_sensitivities(y_true, y_pred):
 
 	return sensitivities
 
+"""Function that return the minimum sensitivity among all the classes"""
 def minimum_sensitivity(y_true, y_pred):
 	return np.min(_compute_sensitivities(y_true, y_pred))
 

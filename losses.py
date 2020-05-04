@@ -29,13 +29,6 @@ def qwk_loss(cost_matrix):
 		targets = K.argmax(true_prob, axis=1)
 		costs = K.gather(cost_matrix, targets)
 
-
-		# costs = K.Print(costs, data=[costs], summarize=100, message='costs')
-
-#		pred_cls = K.argmax(pred_prob, axis=1)
-
-# 		conf_mat = K.confusion_matrix(targets, pred_cls)
-
 		numerator = costs * pred_prob
 		numerator = K.sum(numerator)
 
@@ -55,7 +48,16 @@ def qwk_loss(cost_matrix):
 	return _qwk_loss
 
 
+
 def _compute_sensitivities(y_true, y_pred):
+	"""
+	Compute the weighted sensitivities 
+
+	:param y_true: true class.
+	:param y_pred: predicted class.
+	:return: Weighted sensitivities value.
+	"""
+
 	diff = (1.0 - K.pow(y_true - y_pred, 2)) / 2.0 # [0,1]
 	diff_class = K.sum(diff, axis=1) # vector of size N
 	sum = K.sum(diff_class) # total sum of that vector
@@ -65,13 +67,26 @@ def _compute_sensitivities(y_true, y_pred):
 
 
 def ms_loss(true_prob, pred_prob):
-	print(true_prob)
+	"""
+	Compute mean sensitivities loss function.
+
+	:param pred_prob: predict probabilities tensor.
+	:param true_prob: true probabilities tensor.
+	:return: ms loss value.
+	"""    
 	sensis = _compute_sensitivities(true_prob, pred_prob)
 	mean_sens = K.mean(sensis)
 	return mean_sens
 
 
 def ms_n_qwk_loss(qwk_cost_matrix, alpha=0.5):
+	"""
+	Compute the weighted sum of mean sensitivities and quadratic weighted kappa loss.
+
+	:param qwk_cost_matrix: cost matrix.
+	:param alpha: weight for qwk in comparaison with ms. It must be between 1 and 0.
+	:return: the weighted sum of mean sensitivities and quadratic weighted kappa loss.
+	"""    
 	def _ms_n_qwk_loss(true_prob, pred_prob):
 		qwk = qwk_loss(qwk_cost_matrix)(true_prob, pred_prob)
 		ms = ms_loss(true_prob, pred_prob)

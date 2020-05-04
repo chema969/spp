@@ -24,13 +24,24 @@ class Net:
 		self.num_classes = num_classes
 		self.spp_alpha = spp_alpha
 		self.dropout = dropout
-
+	
+	"""
+	Function that return a model with the named passed by argument as net_model	
+	:param net_model: string with the name of the model
+	:return: name model in case it exist
+	"""
 	def build(self, net_model):
 		if hasattr(self, net_model):
 			return getattr(self, net_model)()
 		else:
 			raise Exception('Invalid network model.')
 
+
+	"""
+	VGG19 model, defined in the article
+	Very Deep Convolutional Networks for Large-Scale Image Recognition
+	https://arxiv.org/abs/1409.1556
+	""" 	
 	def vgg19(self):
 
 		input = tf.keras.layers.Input(shape=(self.size, self.size, self.num_channels))
@@ -111,6 +122,12 @@ class Net:
 		model = tf.keras.Model(input, x)		
 		return model
 
+
+	"""
+	VGG16 model, defined in the article
+	Very Deep Convolutional Networks for Large-Scale Image Recognition
+	https://arxiv.org/abs/1409.1556
+	""" 
 	def vgg16(self):
 		weight_decay = 0.0005
 		# Build the network of vgg for 10 classes with massive dropout and weight decay as described in the paper.
@@ -205,7 +222,9 @@ class Net:
 
 
 
-
+	"""
+	Conv128 architecture
+	""" 
 	def conv128(self):
 
 		feature_filter_size = 3
@@ -262,6 +281,13 @@ class Net:
 
 		return model
 
+	"""
+	Inception-ResNet V2 model, with weights pre-trained on ImageNet.
+	A zeroPadding layer is added to the model. Also, a dropout layer.
+	The original Inception-ResNet V2 model is defined in the article
+	Inception-v4, Inception-ResNet and the Impact of Residual Connections on Learning
+	https://arxiv.org/abs/1602.07261
+	""" 
 	def inceptionresnetv2(self):
 		input = Input(shape=(self.size, self.size, self.num_channels))
 		x = input
@@ -271,7 +297,7 @@ class Net:
 			size = 75
 			x = tf.keras.layers.ZeroPadding2D(padding=(75 - self.size) // 2 + 1)(x)
 
-		x = Irnv2(input_tensor=x, include_top=False, input_shape=(size, size, self.num_channels),
+		x = Irnv2(input_tensor=x, include_top=False, weights='imagenet', input_shape=(size, size, self.num_channels),
 				  classes=self.num_classes, pooling='avg')(x)
 
 		x = tf.keras.layers.Dense(512)(x)
@@ -285,6 +311,9 @@ class Net:
 
 		return model
 
+	"""
+	Beckham resnet model
+	"""
 	def beckhamresnet(self):
 		input = tf.keras.layers.Input(shape=(self.size, self.size, self.num_channels))
 		x = input
@@ -301,6 +330,11 @@ class Net:
 
 		return model
 
+
+	"""
+	Function that return an activation layer
+	:return: Activation layer 
+	"""
 	def __activation(self):
 		if self.activation == 'relu':
 			return tf.keras.layers.Activation('relu')
@@ -345,6 +379,11 @@ class Net:
 		else:
 			return tf.keras.layers.Activation('relu')
 
+	"""
+	Function that add the layers with the final activation into the model
+	:param x: A functional model in which final activation layers would be added
+	:return: Nothing  
+	"""
 	def __final_activation(self, x):
 		if self.final_activation == 'poml':
 			x = Dense(1)(x)
