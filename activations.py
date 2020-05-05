@@ -4,6 +4,9 @@ from tensorflow_probability import distributions
 from tensorflow.keras import backend as K
 
 def cons_greater_zero(value):
+	"""
+	Auxiliar function used to avoid zero in some of the layers values
+	"""
 	epsilon = 1e-9
 	return epsilon + K.pow(value, 2)
 
@@ -63,6 +66,9 @@ def parametric_softplus(spp_alpha):
 
 
 class MPELU(tf.keras.layers.Layer):
+	"""
+	Multiple Parametric Exponential Linear Units.
+	"""	
 	def __init__(self, channel_wise=True, **kwargs):
 		super(MPELU, self).__init__(**kwargs)
 		self.channel_wise = channel_wise
@@ -164,9 +170,11 @@ class PairedReLU(tf.keras.layers.Layer):
 
 
 class EReLU(tf.keras.layers.Layer):
-    """
-     Elastic Rectified Linear Units
-    """
+	"""
+	Elastic Rectified Linear Units, in which
+	each positive value scales within a moderate 
+	range like a spring during training stage
+	"""
 	def __init__(self, alpha=0.5, **kwargs):
 		super(EReLU, self).__init__(**kwargs)
 		self.alpha = alpha
@@ -187,6 +195,9 @@ class EReLU(tf.keras.layers.Layer):
 
 
 class EPReLU(tf.keras.layers.Layer):
+	"""
+	Elastic Parametric Rectified Linear Unit, mix between EReLU and PReLU
+	"""
 	def __init__(self, alpha=0.5, **kwargs):
 		super(EPReLU, self).__init__(**kwargs)
 		self.alpha = alpha
@@ -210,9 +221,9 @@ class EPReLU(tf.keras.layers.Layer):
 
 
 class SQRTActivation(tf.keras.layers.Layer):
-    """
-    Square Root Based Activation Function
-    """
+	"""
+	Square Root Based Activation Function
+	"""
 	def __init__(self, **kwargs):
 		super(SQRTActivation, self).__init__(**kwargs)
 
@@ -248,11 +259,11 @@ class RReLu(tf.keras.layers.Layer):
 
 
 class PELU(tf.keras.layers.Layer):
-    """
-    Parametric Exponential Linear Unit, an evolution
-    of ELU with parameters controlling different 
-    aspects of the function
-    """
+	"""
+	Parametric Exponential Linear Unit, an evolution
+	of ELU with parameters controlling different 
+	aspects of the function
+	"""
 	def __init__(self, **kwargs):
 		super(PELU, self).__init__(**kwargs)
 
@@ -346,12 +357,12 @@ class Antirectifier(tf.keras.layers.Layer):
 
 
 class CReLU(tf.keras.layers.Layer):
-    """
-    Concatenated Rectified Linear Units activation:
-    Concatenates a ReLU which selects only the positive part 
-    of the activation with a ReLU which selects only the 
-    negative part of the activation.
-    """
+	"""
+	Concatenated Rectified Linear Units activation:
+	Concatenates a ReLU which selects only the positive part 
+	of the activation with a ReLU which selects only the 
+	negative part of the activation.
+	"""
 	def compute_output_shape(self, input_shape):
 		shape = list(input_shape)
 		shape[-1] *= 2

@@ -20,7 +20,7 @@ class Experiment:
 				 checkpoint_dir='checkpoint', loss='categorical_crossentropy', activation='relu',
 				 final_activation='softmax', f_a_params = {}, use_tau=True,
 				 prob_layer=None, spp_alpha=1.0, lr=0.1, momentum=0.9, dropout=0, task='both', workers=4,
-				 queue_size=1024, val_metrics=['loss', 'acc'], rescale_factor=0, augmentation={},
+				 queue_size=1024, rescale_factor=0, augmentation={},
 				 val_type='holdout', holdout=0.2, n_folds=5):
 		self._name = name
 		self._db = db
@@ -42,8 +42,6 @@ class Experiment:
 		self._finished = False
 		self._workers = workers
 		self._queue_size = queue_size
-		self._val_metrics = val_metrics
-		self._rescale_factor = rescale_factor
 		self._augmentation = augmentation
 		self._val_type = val_type
 		self._holdout = holdout
@@ -322,29 +320,6 @@ class Experiment:
 	def queue_size(self):
 		del self._queue_size
 
-	@property
-	def val_metrics(self):
-		return self._val_metrics
-
-	@val_metrics.setter
-	def val_metrics(self, val_metrics):
-		self._val_metrics = val_metrics
-
-	@val_metrics.deleter
-	def val_metrics(self):
-		del self._val_metrics
-
-	@property
-	def rescale_factor(self):
-		return self._rescale_factor
-
-	@rescale_factor.setter
-	def rescale_factor(self, rescale_factor):
-		self._rescale_factor = rescale_factor
-
-	@rescale_factor.deleter
-	def rescale_factor(self):
-		del self._rescale_factor
 
 	@property
 	def augmentation(self):
@@ -651,8 +626,6 @@ class Experiment:
 			'task': self.task,
 			'workers': self.workers,
 			'queue_size': self.queue_size,
-			'val_metrics': self.val_metrics,
-			'rescale_factor': self.rescale_factor,
 			'augmentation': self.augmentation,
 			'val_type' : self._val_type,
 			'holdout' : self._holdout,
@@ -670,7 +643,7 @@ class Experiment:
 		self.batch_size = 'batch_size' in config and int(config['batch_size']) or 128
 		self.epochs = 'epochs' in config and config['epochs'] or 100
 		self.checkpoint_dir = 'checkpoint_dir' in config and config['checkpoint_dir'] or 'results'
-		self.loss = 'loss' in config and config['loss'] or 'crossentropy'
+		self.loss = 'loss' in config and config['loss'] or 'categorical_crossentropy'
 		self.activation = 'activation' in config and config['activation'] or 'relu'
 		self.final_activation = 'final_activation' in config and config['final_activation'] or 'softmax'
 		self.f_a_params = config['f_a_params'] if 'f_a_params' in config else {}
@@ -683,8 +656,6 @@ class Experiment:
 		self.task = 'task' in config and config['task'] or 'both'
 		self.workers = 'workers' in config and config['workers'] or 4
 		self.queue_size = 'queue_size' in config and config['queue_size'] or 1024
-		self.val_metrics = 'val_metrics' in config and config['val_metrics'] or ['acc', 'loss']
-		self.rescale_factor = 'rescale_factor' in config and config['rescale_factor'] or 0
 		self.augmentation = 'augmentation' in config and config['augmentation'] or {}
 		self._val_type = 'val_type' in config and config['val_type'] or 'holdout'
 		self._holdout = 'holdout' in config and float(config['holdout']) or 0.2

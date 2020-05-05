@@ -118,6 +118,9 @@ class ComputeMetricsCallback(tf.keras.callbacks.Callback):
 
 
 class PrintWeightsCallback(tf.keras.callbacks.Callback):
+	"""
+	Class to print the weights of the classes
+	"""
 	def __init__(self, class_weights):
 		self.class_weights = class_weights
 
@@ -138,6 +141,7 @@ class ReweightClassesCallback(tf.keras.callbacks.Callback):
 		self.val_steps = val_steps
 
 		super(ReweightClassesCallback, self).__init__()
+
 
 	def on_epoch_begin(self, epoch, logs):
 		print(self.class_weights)

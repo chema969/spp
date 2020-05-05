@@ -9,6 +9,9 @@ import os
 import random
 
 def generate_random_augmentation(p, shape):
+    """
+    Generates the data of a random augmentation for ImageDataGenerator.
+    """
     aug = {}
 
     if 'rotation_range' in p:
@@ -61,6 +64,9 @@ def process_data(augmentation, x):
     return x
 
 class SmallGenerator(Sequence):
+    """
+    Class to define a generator for small image size datasets
+    """
     def __init__(self, x, y, num_classes, mean=None, std=None, batch_size=128, augmentation={}, workers=7, one_hot=True):
         self._x = x
         self._y = y
@@ -82,7 +88,6 @@ class SmallGenerator(Sequence):
         batch_x = self._x[idx * self._batch_size:(idx + 1) * self._batch_size]
         batch_y = self._y[idx * self._batch_size:(idx + 1) * self._batch_size]
 
-        # batch_x = self._p.starmap(process_data, zip(repeat(self._augmentation), (batch_x[i, :, :, :] for i in range(batch_x.shape[0]))))
         func = partial(process_data, self._augmentation)
         batch_x = np.array(self._p.map(func, batch_x))
 
@@ -116,6 +121,9 @@ def process_data_path(augmentation, force_rgb, base_path, path):
     return img
 
 class BigGenerator(Sequence):
+    """
+    Class to define a generator for big image size datasets
+    """
     def __init__(self, df, base_path, num_classes, x_col='x', y_col='y', mean=None, std=None, batch_size=128, augmentation={}, workers=7, one_hot=True, force_rgb=True):
         self._df = df
         self._base_path = base_path
