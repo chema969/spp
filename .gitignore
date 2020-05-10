@@ -5,3 +5,4 @@ vgg19.npy
 !paper
 !paper/*
 *.swp
+results

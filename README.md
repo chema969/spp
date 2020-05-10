@@ -49,7 +49,7 @@ To use this program, a .json file defining the experiment to use is needed. The 
 | val_type         | Type of validation used                                                                                         | 'holdout' or 'kfold'                                                                                                                                                                                                                                         | 'holdout'                  |
 | holdout          | Percentage of validation <br>hold-out                                                                           | Float number between 1 and 0                                                                                                                                                                                                                                 | 0.2                        |
 | n_folds          | Number of folds to be used                                                                                      | Any integer value over 0                                                                                                                                                                                                                                     | 5                          |
-
+| encode           | Tipe of encode used in the class labels                                                                        |'one_hot','soft_ordinal'                                                                                                                                                                                                                                      | 'one_hot'                |
 
 
 

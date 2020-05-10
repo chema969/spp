@@ -511,3 +511,5 @@ class CLM(tf.keras.layers.Layer):
 	def __set_default_param(self, param, value):
 		if not param in self.p:
 			self.p[param] = value
+
+

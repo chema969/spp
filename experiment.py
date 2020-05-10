@@ -21,7 +21,7 @@ class Experiment:
 				 final_activation='softmax', f_a_params = {}, use_tau=True,
 				 prob_layer=None, spp_alpha=1.0, lr=0.1, momentum=0.9, dropout=0, task='both', workers=4,
 				 queue_size=1024, rescale_factor=0, augmentation={},
-				 val_type='holdout', holdout=0.2, n_folds=5):
+				 val_type='holdout', holdout=0.2, n_folds=5.,encode='one_hot'):
 		self._name = name
 		self._db = db
 		self._net_type = net_type
@@ -47,6 +47,7 @@ class Experiment:
 		self._holdout = holdout
 		self._n_folds = n_folds
 		self._current_fold = 0
+		self._encode=encode		
 
 		self._best_metric = None
 
@@ -473,7 +474,7 @@ class Experiment:
 		print('Training on {self._ds.size_train()} samples, validating on {self._ds.size_val()} samples.')
 
 		# Run training
-		model.fit(self._ds.generate_train(self.batch_size, self.augmentation), epochs=self.epochs,
+		model.fit(self._ds.generate_train(self.batch_size, self.augmentation,self._encode), epochs=self.epochs,
 							initial_epoch=start_epoch,
 							steps_per_epoch=self._ds.num_batches_train(self.batch_size),
 							callbacks=[tf.keras.callbacks.LearningRateScheduler(lr_scheduler),
@@ -486,7 +487,7 @@ class Experiment:
 							use_multiprocessing=False,
 							max_queue_size=self.queue_size,
 							class_weight=class_weight,
-							validation_data=self._ds.generate_val(self.batch_size),
+							validation_data=self._ds.generate_val(self.batch_size,self._encode),
 							validation_steps=self._ds.num_batches_val(self.batch_size),
 							verbose=2
 							)
@@ -525,7 +526,7 @@ class Experiment:
 		all_metrics = {}
 
 		# Get the generators for train, validation and test
-		generators = [self._ds.generate_train(self.batch_size, {}), self._ds.generate_val(self.batch_size), self._ds.generate_test(self.batch_size)]
+		generators = [self._ds.generate_train(self.batch_size, {},self._encode), self._ds.generate_val(self.batch_size,self._encode), self._ds.generate_test(self.batch_size,self._encode)]
 		steps = [self._ds.num_batches_train(self.batch_size), self._ds.num_batches_val(self.batch_size), self._ds.num_batches_test(self.batch_size)]
 
 		for generator, step, set in zip(generators, steps, ['Train', 'Validation', 'Test']):
@@ -629,7 +630,8 @@ class Experiment:
 			'augmentation': self.augmentation,
 			'val_type' : self._val_type,
 			'holdout' : self._holdout,
-			'n_folds' : self._n_folds
+			'n_folds' : self._n_folds,
+			'encode'  : self._encode
 		}
 
 	def set_config(self, config):
@@ -660,7 +662,7 @@ class Experiment:
 		self._val_type = 'val_type' in config and config['val_type'] or 'holdout'
 		self._holdout = 'holdout' in config and float(config['holdout']) or 0.2
 		self._n_folds = 'n_folds' in config and int(config['n_folds']) or 5
-
+		self._encode = 'encode' in config and config['encode'] or 'one_hot'
 		if 'name' in config:
 			self.name = config['name']
 		else:

@@ -8,6 +8,17 @@ import numpy as np
 import os
 import random
 
+def SORDencoder(y_labels,class_labels,num_classes):
+    SORD_auxiliar_matrix=np.array([abs(class_labels-class_labels[i])/num_classes for i in range(0,class_labels.size)])
+    encodeMat=np.zeros((SORD_auxiliar_matrix.shape[0],SORD_auxiliar_matrix.shape[0]),)
+    for i in range(0,SORD_auxiliar_matrix.shape[0]):
+      for j in range(0,SORD_auxiliar_matrix[i].size):
+        #Calculates the softmax of each value for each row
+        encodeMat[i,j]=np.exp(-SORD_auxiliar_matrix[i,j])/sum(np.exp(-SORD_auxiliar_matrix[i]))
+    y_encoded=np.array([encodeMat[y_labels[i]][0] for i in range(0,y_labels.size)])
+
+    return y_encoded
+
 def generate_random_augmentation(p, shape):
     """
     Generates the data of a random augmentation for ImageDataGenerator.
@@ -67,7 +78,7 @@ class SmallGenerator(Sequence):
     """
     Class to define a generator for small image size datasets
     """
-    def __init__(self, x, y, num_classes, mean=None, std=None, batch_size=128, augmentation={}, workers=7, one_hot=True):
+    def __init__(self, x, y, num_classes, mean=None, std=None, batch_size=128, augmentation={}, workers=7, encode='one_hot', labels=[]):
         self._x = x
         self._y = y
         self._num_classes = num_classes
@@ -77,8 +88,8 @@ class SmallGenerator(Sequence):
         self._augmentation = augmentation
         self._workers = workers
         self._p = Pool(self._workers)
-        self._one_hot = one_hot
-        
+        self._encode = encode
+        self._labels=labels
         super(SmallGenerator, self).__init__()
 
     def __len__(self):
@@ -95,8 +106,12 @@ class SmallGenerator(Sequence):
         if self._mean and self._std:
             batch_x = (batch_x - self._mean) / self._std
 
-        if self._one_hot:
+        if self._encode=='one_hot':
             batch_y = to_categorical(batch_y, num_classes=self._num_classes)
+        
+        elif self._encode=='soft_ordinal':
+            batch_y = SORDencoder(batch_y,self._labels,self._num_classes)
+
 
         return np.array(batch_x), np.array(batch_y)
 
@@ -124,7 +139,7 @@ class BigGenerator(Sequence):
     """
     Class to define a generator for big image size datasets
     """
-    def __init__(self, df, base_path, num_classes, x_col='x', y_col='y', mean=None, std=None, batch_size=128, augmentation={}, workers=7, one_hot=True, force_rgb=True):
+    def __init__(self, df, base_path, num_classes, x_col='x', y_col='y', mean=None, std=None, batch_size=128, augmentation={}, workers=7, encode='one_hot', force_rgb=True, labels=[]):
         self._df = df
         self._base_path = base_path
         self._num_classes = num_classes
@@ -136,9 +151,9 @@ class BigGenerator(Sequence):
         self._augmentation = augmentation
         self._workers = workers
         self._p = Pool(self._workers)
-        self._one_hot = one_hot
+        self._encode = encode
         self._force_rgb = force_rgb
-
+        self._labels=labels
         super(BigGenerator, self).__init__()
 
     def __len__(self):
@@ -156,9 +171,12 @@ class BigGenerator(Sequence):
         if self._mean and self._std:
             batch_x = (batch_x - self._mean) / self._std
 
-        if self._one_hot:
+        if self._encode=='one_hot':
             batch_y = to_categorical(batch_y, num_classes=self._num_classes)
-
+        
+        elif self._encode=='soft_ordinal':
+            batch_y = SORDencoder(batch_y,self._labels,self._num_classes)
+        
         return np.array(batch_x), np.array(batch_y)
 
     def __del__(self):
