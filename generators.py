@@ -8,16 +8,22 @@ import numpy as np
 import os
 import random
 
-def SORDencoder(y_labels,class_labels,num_classes):
-    SORD_auxiliar_matrix=np.array([abs(class_labels-class_labels[i])/num_classes for i in range(0,class_labels.size)])
-    encodeMat=np.zeros((SORD_auxiliar_matrix.shape[0],SORD_auxiliar_matrix.shape[0]),)
-    for i in range(0,SORD_auxiliar_matrix.shape[0]):
-      for j in range(0,SORD_auxiliar_matrix[i].size):
-        #Calculates the softmax of each value for each row
-        encodeMat[i,j]=np.exp(-SORD_auxiliar_matrix[i,j])/sum(np.exp(-SORD_auxiliar_matrix[i]))
-    y_encoded=np.array([encodeMat[y_labels[i]][0] for i in range(0,y_labels.size)])
+def SORDencoder(y_labels,class_labels,num_classes, metric='absolute'):
 
-    return y_encoded
+    if metric=='squared':
+        cost_matrix=np.power(np.tile(class_labels, (num_classes, 1)) - np.reshape(class_labels, (-1,1)),2) / num_classes
+    if metric=='squared_log':
+        #Through the common use of a 0 label, I add an really low value to avoid infinite logarithm
+        cost_matrix=np.abs(np.log(np.tile(class_labels+0.00000001, (num_classes, 1))) - np.log(np.reshape(class_labels, (-1,1))+0.00000001)) / num_classes
+    else:
+        #By default, absolute metric is used
+        cost_matrix=np.abs(np.tile(class_labels, (num_classes, 1)) - np.reshape(class_labels, (-1,1))) / num_classes
+
+    #Calculates the softmax of each value for each row
+    encode_mat=np.exp(-cost_matrix)/np.reshape(np.sum( np.exp(-cost_matrix),axis=1),(-1,1))
+    y_encoded=encode_mat[y_labels]
+
+    return y_encoded[:,0]
 
 def generate_random_augmentation(p, shape):
     """
@@ -110,7 +116,7 @@ class SmallGenerator(Sequence):
             batch_y = to_categorical(batch_y, num_classes=self._num_classes)
         
         elif self._encode=='soft_ordinal':
-            batch_y = SORDencoder(batch_y,self._labels,self._num_classes)
+            batch_y = SORDencoder(batch_y,self._labels,self._num_classes, metric='squared_log')
 
 
         return np.array(batch_x), np.array(batch_y)
