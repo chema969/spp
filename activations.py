@@ -212,7 +212,7 @@ class EPReLU(tf.keras.layers.Layer):
 	def call(self, inputs, **kwargs):
 		# Generate random uniform tensor between [1-alpha, 1+alpha] for training and ones tensor for test
 		k = K.in_train_phase(K.random_uniform(inputs.shape[1:], 1 - self.alpha, 1 + self.alpha),
-							 K.ones(inputs.shape[1:]))
+							 tf.ones(inputs.shape[1:]))
 
 		pos = tf.keras.activations.relu(inputs) * k
 		neg = -self.a * tf.keras.activations.relu(-inputs)

@@ -2,11 +2,12 @@ import tensorflow as tf
 import numpy as np
 from net_keras import Net
 import os
+import shutil
 import pickle
 from losses import qwk_loss, make_cost_matrix, ms_n_qwk_loss
 from metrics import np_quadratic_weighted_kappa, top_2_accuracy, top_3_accuracy, \
 	minimum_sensitivity, accuracy_off1,categorical_accuracy,mean_absolute_error, \
-	omae,mean_squared_error
+	overall_mean_squared_error,mean_squared_error
 from dataset import Dataset
 from sklearn.metrics import confusion_matrix
 from tensorflow.keras import backend as K
@@ -54,8 +55,8 @@ class Experiment:
 		self._ds = None
 
 		# Model and results file names
-		self.model_file = 'model.yml'
-		self.best_model_file = 'best_model.yml'
+		self.model_file = 'model'
+		self.best_model_file = 'best_model'
 		self.model_file_extra = 'model.txt'
 		self.csv_file = 'results.csv'
 		self.evaluation_file = 'evaluation.pickle'
@@ -387,7 +388,7 @@ class Experiment:
 		# Get class weights based on frequency
 		class_weight = self._ds.get_class_weights()
 		# class_weight = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100000.0])
-
+		
 		# Learning rate scheduler callback
 		def lr_exp_scheduler(epoch):
 			lr = self.lr * np.exp(-0.025 * epoch)
@@ -407,37 +408,44 @@ class Experiment:
 				logs['val_loss']
 			except KeyError:
 				# In case validation is not defined (For example, little datasets)
-				print("Validation loss not defined")
+				print("\n\nKey error:Validation loss not defined")
+				pass
 			else:
 				if (self.new_metric(logs['val_loss'])):
-					model.save(os.path.join(self.checkpoint_dir, self.best_model_file))
+					if os.path.isdir(os.path.join(self.checkpoint_dir, self.best_model_file)):					
+						shutil.rmtree(os.path.join(self.checkpoint_dir, self.best_model_file))
+					tf.keras.models.save_model(model,os.path.join(self.checkpoint_dir, self.best_model_file))
 					print("Best model saved.")
-
-			with open(os.path.join(self.checkpoint_dir, self.model_file_extra), 'w') as f:
-				f.write(str(epoch + 1))
-				f.write('\n' + str(self.best_metric))
+			if(epoch%10==0):
+				if os.path.isdir(os.path.join(self.checkpoint_dir, self.model_file)):					
+					shutil.rmtree(os.path.join(self.checkpoint_dir, self.model_file))
+				tf.keras.models.save_model(model,os.path.join(self.checkpoint_dir, self.model_file))
+				print("Model saved.")
+				with open(os.path.join(self.checkpoint_dir, self.model_file_extra), 'w') as f:
+					f.write(str(epoch + 1))
+					f.write('\n' + str(self.best_metric))
 
 
 		save_epoch_callback = tf.keras.callbacks.LambdaCallback(on_epoch_end=save_epoch)
 
-		# NNet object
-		net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
-						 self.prob_layer, self._ds.num_channels, self._ds.num_classes, self.spp_alpha, self.dropout)
-
-		# model = self.get_model(net_object, self.net_type)
-		model = net_object.build(self.net_type)
 
 		# Create checkpoint dir if not exists
 		if not os.path.isdir(self.checkpoint_dir):
 			os.makedirs(self.checkpoint_dir)
 
 		# Check whether a saved model exists
-		if os.path.isfile(os.path.join(self.checkpoint_dir, self.model_file)):
+		if os.path.isdir(os.path.join(self.checkpoint_dir, self.model_file)):
 			print("===== RESTORING SAVED MODEL =====")
-			model.load_weights(os.path.join(self.checkpoint_dir, self.model_file))
-		elif os.path.isfile(os.path.join(self.checkpoint_dir, self.best_model_file)):
+			model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file))
+		elif os.path.isdir(os.path.join(self.checkpoint_dir, self.best_model_file)):
 			print("===== RESTORING SAVED BEST MODEL =====")
-			model.load_weights(os.path.join(self.checkpoint_dir, self.best_model_file))
+			model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file))
+		else:
+			# NNet object
+			net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
+						 self.prob_layer, self._ds.num_channels, self._ds.num_classes, self.spp_alpha, self.dropout)
+
+			model = net_object.build(self.net_type)
 
 		# Create the cost matrix that will be used to compute qwk
 		cost_matrix = K.constant(make_cost_matrix(self._ds.num_classes), dtype=K.floatx())
@@ -501,9 +509,8 @@ class Experiment:
 			f.write('\n' + str(self.best_metric))
 
 		# Delete model file
-		if os.path.isfile(os.path.join(self.checkpoint_dir, self.model_file)):
-			os.remove(os.path.join(self.checkpoint_dir, self.model_file))
-
+		if os.path.isdir(os.path.join(self.checkpoint_dir, self.model_file)):
+			shutil.rmtree(os.path.join(self.checkpoint_dir, self.model_file))
 
 
 	def evaluate(self):
@@ -514,7 +521,7 @@ class Experiment:
 		print('=== EVALUATING {} ==='.format(self.name))
 
 		# Check if best model file exists
-		if not os.path.isfile(os.path.join(self.checkpoint_dir, self.best_model_file)):
+		if not os.path.isdir(os.path.join(self.checkpoint_dir, self.best_model_file)):
 			print('Best model file not found')
 			return
 
@@ -533,18 +540,20 @@ class Experiment:
 			print('\n=== {} dataset ===\n'.format(set))
 
 			# NNet object
-			net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
-							 self.prob_layer, self._ds.num_channels, self._ds.num_classes, self.spp_alpha, self.dropout)
+			#net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
+			#				 self.prob_layer, self._ds.num_channels, self._ds.num_classes, self.spp_alpha, self.dropout)
 
 			# model = self.get_model(net_object, self.net_type)
-			model = net_object.build(self.net_type)
+			#model = net_object.build(self.net_type)
 
 			# Load weights
-			model.load_weights(os.path.join(self.checkpoint_dir, self.best_model_file))
+			#model.load_weights(os.path.join(self.checkpoint_dir, self.best_model_file))
+			
+			model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file))
 
 			# Get predictions
 			# generator.reset()
-			predictions = model.predict_generator(generator, steps=step, verbose=1)
+			predictions = model.predict(generator, steps=step, verbose=1)
 
 			# generator.reset()
 			y_set = None
@@ -566,7 +575,7 @@ class Experiment:
 										  num_classes - 1)
 		ms = minimum_sensitivity(y_true, y_pred)
 		mae = mean_absolute_error(y_true, y_pred)
-		omae = omae(y_true, y_pred)
+		omae = overall_mean_squared_error(y_true, y_pred)
 		mse = mean_squared_error(y_true, y_pred)
 		acc = categorical_accuracy(y_true, y_pred)
 		top2 = top_2_accuracy(y_true, y_pred)

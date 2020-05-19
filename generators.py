@@ -9,7 +9,6 @@ import os
 import random
 
 def SORDencoder(y_labels,class_labels,num_classes, metric='absolute'):
-
     if metric=='squared':
         cost_matrix=np.power(np.tile(class_labels, (num_classes, 1)) - np.reshape(class_labels, (-1,1)),2) / num_classes
     if metric=='squared_log':
@@ -22,8 +21,7 @@ def SORDencoder(y_labels,class_labels,num_classes, metric='absolute'):
     #Calculates the softmax of each value for each row
     encode_mat=np.exp(-cost_matrix)/np.reshape(np.sum( np.exp(-cost_matrix),axis=1),(-1,1))
     y_encoded=encode_mat[y_labels]
-
-    return y_encoded[:,0]
+    return y_encoded[:]
 
 def generate_random_augmentation(p, shape):
     """

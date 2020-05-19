@@ -99,7 +99,7 @@ def _resnet_2x4(l_in, nf=(32, 64, 128, 256), N=2, activation='relu'):
 
 	# layer = Flatten()(layer)
 
-	model = Model(l_in, layer, name='resnet2x4')
+	model = Model(l_in, layer,name='Resnet_2x4')
 
 	return model
 
@@ -120,3 +120,4 @@ class Resnet_2x4():
         :return: Clasificación de la red para los patrones de entrada.
         """
 		return self.net
+

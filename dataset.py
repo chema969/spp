@@ -243,6 +243,7 @@ class Dataset:
 		self._x_trainval, self._y_trainval = x_train, y_train
 		self._x_test, self._y_test = x_test, y_test
 
+		self._labels=np.unique(y_train)
 		# Mark dataset as loaded
 		self._loaded = True
 
@@ -261,6 +262,7 @@ class Dataset:
 		self._x_trainval, self._y_trainval = x_train, y_train
 		self._x_test, self._y_test = x_test, y_test
 
+		self._labels=np.unique(y_train)
 		# Mark dataset as loaded
 		self._loaded = True
 		
@@ -308,6 +310,7 @@ class Dataset:
 		self._x_trainval, self._y_trainval = x_train, y_train
 		self._x_test, self._y_test = x_test, y_test
 
+		self._labels=np.unique(y_train)
 		# Mark dataset as loaded
 		self._loaded = True
 
@@ -334,6 +337,7 @@ class Dataset:
 		self._x_trainval, self._y_trainval = self._load_from_dataframe(df_trainval, x_col, y_col, base_path)
 		self._x_test, self._y_test = self._load_from_dataframe(df_test, x_col, y_col, base_path)
 
+		self._labels=np.unique(y_train)		
 		# Mark dataset as loaded
 		self._loaded = True
 
@@ -356,6 +360,7 @@ class Dataset:
 		self._sample_shape = (128, 128, 3)
 		self._num_classes = 8
 
+		self._labels=np.unique(self._df_trainval[self._y_col])
 		# Check that images exist
 		if self._check_dataframe_images(self._df_trainval, self._x_col, self._base_path) and \
         self._check_dataframe_images(self._df_test, self._x_col, self._base_path):
@@ -381,6 +386,7 @@ class Dataset:
 		self._sample_shape = (128, 128, 3)
 		self._num_classes = 5
 
+		self._labels=np.unique(self._df_trainval[self._y_col])
 		# Check that images exist
 		if self._check_dataframe_images(self._df_trainval, self._x_col, self._base_path) and \
 				self._check_dataframe_images(self._df_test, self._x_col, self._base_path):
@@ -406,6 +412,7 @@ class Dataset:
 		self._sample_shape = (256, 256, 3)
 		self._num_classes = 8
 
+		self._labels=np.unique(self._df_trainval[self._y_col])
 		# Check that images exist
 		if self._check_dataframe_images(self._df_trainval, self._x_col, self._base_path) and \
 				self._check_dataframe_images(self._df_test, self._x_col, self._base_path):
@@ -435,6 +442,7 @@ class Dataset:
 		self._x_trainval, self._y_trainval = self._load_from_dataframe(df_trainval, x_col, y_col, base_path)
 		self._x_test, self._y_test = self._load_from_dataframe(df_test, x_col, y_col, base_path)
 
+		self._labels=np.unique(self._y_trainval)
 		# Mark dataset as loaded
 		self._loaded = True
 
@@ -460,7 +468,8 @@ class Dataset:
 		# Load data from dataframe
 		self._x_trainval, self._y_trainval = self._load_from_dataframe(df_trainval, x_col, y_col, base_path)
 		self._x_test, self._y_test = self._load_from_dataframe(df_test, x_col, y_col, base_path)
-		
+
+		self._labels=np.unique(self._y_trainval)		
 		# Mark dataset as loaded
 		self._loaded = True
 
@@ -483,6 +492,7 @@ class Dataset:
 		self._x_trainval, self._y_trainval = x_train, y_train
 		self._x_test, self._y_test = x_test, y_test
 
+		self._labels=np.unique(self._y_trainval)
 		# Mark dataset as loaded
 		self._loaded = True
 
@@ -518,29 +528,28 @@ class Dataset:
 	def generate_train(self, batch_size, augmentation, encode):
 		# Load dataset if not loaded
 		self.load(self._name)
-
 		if self._big_dataset:
-			return BigGenerator(self._df_train, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size, augmentation=augmentation, encode=encode, 		labels=np.unique(self._y_trainval))
+			return BigGenerator(self._df_train, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size, augmentation=augmentation, encode=encode, 		labels=self._labels)
 		else:
-			return SmallGenerator(self._x_train, self._y_train, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size, augmentation=augmentation,encode=encode,labels=np.unique(self._y_trainval))
+			return SmallGenerator(self._x_train, self._y_train, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size, augmentation=augmentation,encode=encode,labels=self._labels)
 
 	def generate_val(self, batch_size, encode):
 		# Load dataset if not loaded
 		self.load(self._name)
 
 		if self._big_dataset:
-			return BigGenerator(self._df_val, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=np.unique(self._y_trainval))
+			return BigGenerator(self._df_val, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels)
 		else:
-			return SmallGenerator(self._x_val, self._y_val, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=np.unique(self._y_trainval))
+			return SmallGenerator(self._x_val, self._y_val, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels)
 
 	def generate_test(self, batch_size, encode):
 		# Load dataset if not loaded
 		self.load(self._name)
 
 		if self._big_dataset:
-			return BigGenerator(self._df_test, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train,encode=encode, batch_size=batch_size,labels=np.unique(self._y_trainval))
+			return BigGenerator(self._df_test, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train,encode=encode, batch_size=batch_size,labels=self._labels)
 		else:
-			return SmallGenerator(self._x_test, self._y_test, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=np.unique(self._y_trainval))
+			return SmallGenerator(self._x_test, self._y_test, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels)
 
 
 	def _check_dataframe_images(self, df, x_col, base_path):
@@ -737,7 +746,10 @@ class Dataset:
 
 		y_label = self._df_train[self._y_col] if self._big_dataset else self._y_train
 
-		return compute_class_weight('balanced', np.unique(y_label), y_label.ravel())
+		class_weight=compute_class_weight('balanced',self._labels , y_label.ravel())
+
+		return dict(zip(self._labels, class_weight))
+
 
 	@property
 	def num_channels(self):

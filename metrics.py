@@ -10,7 +10,7 @@ def mean_absolute_error(y_true, y_pred):
 	return K.mean(tf.keras.losses.mean_absolute_error(y_true, y_pred))
 
 @tf.function
-def omae(y_true, y_pred):
+def overall_mean_squared_error(y_true, y_pred):
 	return K.mean(tf.keras.losses.mean_absolute_error(K.argmax(y_true), K.argmax(y_pred)))
 
 @tf.function
@@ -166,11 +166,13 @@ def np_quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=No
 
 @tf.function
 def top_2_accuracy(y_true, y_pred):
-	return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
+	metric=tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
+	return tf.math.count_nonzero(metric)/tf.size(metric,out_type=tf.dtypes.int64)
 
 @tf.function
 def top_3_accuracy(y_true, y_pred):
-	return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
+	metric=tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
+	return tf.math.count_nonzero(metric)/tf.size(metric,out_type=tf.dtypes.int64)
 
 """Function that compute sensitivity """
 def _compute_sensitivities(y_true, y_pred):
