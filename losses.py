@@ -1,6 +1,8 @@
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras import backend as K
 
+@tf.function
 def make_cost_matrix(num_ratings):
 	"""
 	Create a quadratic cost matrix of num_ratings x num_ratings elements.
@@ -25,6 +27,7 @@ def qwk_loss(cost_matrix):
 	:param cost_matrix: cost matrix.
 	:return: QWK loss value.
 	"""
+	@tf.function
 	def _qwk_loss(true_prob, pred_prob):
 		targets = K.argmax(true_prob, axis=1)
 		costs = K.gather(cost_matrix, targets)
@@ -48,7 +51,7 @@ def qwk_loss(cost_matrix):
 	return _qwk_loss
 
 
-
+@tf.function
 def _compute_sensitivities(y_true, y_pred):
 	"""
 	Compute the weighted sensitivities 
@@ -65,7 +68,7 @@ def _compute_sensitivities(y_true, y_pred):
 
 	return sensitivities
 
-
+@tf.function
 def ms_loss(true_prob, pred_prob):
 	"""
 	Compute mean sensitivities loss function.
@@ -87,6 +90,7 @@ def ms_n_qwk_loss(qwk_cost_matrix, alpha=0.5):
 	:param alpha: weight for qwk in comparaison with ms. It must be between 1 and 0.
 	:return: the weighted sum of mean sensitivities and quadratic weighted kappa loss.
 	"""    
+	@tf.function
 	def _ms_n_qwk_loss(true_prob, pred_prob):
 		qwk = qwk_loss(qwk_cost_matrix)(true_prob, pred_prob)
 		ms = ms_loss(true_prob, pred_prob)

@@ -29,6 +29,7 @@ def quadratic_weighted_kappa(num_classes, cost_matrix):
 	:param cost_matrix: cost matrix that will be used for error weights.
 	:return: qwk value.
 	"""
+	@tf.function
 	def _quadratic_weighted_kappa(y_true, y_pred):
 		"""
 		Compute Quadratic Weighted Kappa metric.
@@ -104,6 +105,7 @@ def histogram(ratings, min_rating=None, max_rating=None):
 
 	return hist_ratings
 
+
 def np_quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None):
 	"""
 	Calculates the quadratic weighted kappa
@@ -175,6 +177,7 @@ def top_3_accuracy(y_true, y_pred):
 	return tf.math.count_nonzero(metric)/tf.size(metric,out_type=tf.dtypes.int64)
 
 """Function that compute sensitivity """
+
 def _compute_sensitivities(y_true, y_pred):
 	if y_true.shape[1] > 1:
 		y_true = np.argmax(y_true, axis=1)
@@ -191,8 +194,10 @@ def _compute_sensitivities(y_true, y_pred):
 	return sensitivities
 
 """Function that return the minimum sensitivity among all the classes"""
+
 def minimum_sensitivity(y_true, y_pred):
 	return np.min(_compute_sensitivities(y_true, y_pred))
+
 
 def accuracy_off1(y_true, y_pred):
 	if y_true.shape[1] > 1:

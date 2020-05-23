@@ -49,7 +49,7 @@ class Experiment:
 		self._n_folds = n_folds
 		self._current_fold = 0
 		self._encode=encode		
-
+		self._cost_matrix=None
 		self._best_metric = None
 
 		self._ds = None
@@ -389,14 +389,12 @@ class Experiment:
 		class_weight = self._ds.get_class_weights()
 		# class_weight = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100000.0])
 		
-		# Learning rate scheduler callback
-		def lr_exp_scheduler(epoch):
-			lr = self.lr * np.exp(-0.025 * epoch)
-			# print("New LR: {}".format(lr))
 
-			return lr
+		# Learning rate scheduler callback
 
 		lr_drop = 20
+
+
 		def lr_scheduler(epoch):
 			return self.lr * (0.5 ** (epoch // lr_drop))
 
@@ -433,13 +431,31 @@ class Experiment:
 		if not os.path.isdir(self.checkpoint_dir):
 			os.makedirs(self.checkpoint_dir)
 
+		# Create the cost matrix that will be used to compute qwk
+		self._cost_matrix = K.constant(make_cost_matrix(self._ds.num_classes), dtype=K.floatx())
+
+		# Cross-entropy loss by default
+		loss = 'categorical_crossentropy'
+
+		# Quadratic Weighted Kappa loss
+		if self.loss == 'qwk':
+			loss = qwk_loss(self._cost_matrix)
+		elif self.loss == 'msqwk':
+			loss = ms_n_qwk_loss(self._cost_matrix)
+
 		# Check whether a saved model exists
 		if os.path.isdir(os.path.join(self.checkpoint_dir, self.model_file)):
 			print("===== RESTORING SAVED MODEL =====")
-			model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file))
+			if loss != 'categorical_crossentropy':
+				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file),custom_objects={loss.__name__: loss})
+			else:
+				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file))
 		elif os.path.isdir(os.path.join(self.checkpoint_dir, self.best_model_file)):
 			print("===== RESTORING SAVED BEST MODEL =====")
-			model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file))
+			if loss != 'categorical_crossentropy':
+				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file),custom_objects={loss.__name__: loss})
+			else:
+				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file))
 		else:
 			# NNet object
 			net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
@@ -447,17 +463,7 @@ class Experiment:
 
 			model = net_object.build(self.net_type)
 
-		# Create the cost matrix that will be used to compute qwk
-		cost_matrix = K.constant(make_cost_matrix(self._ds.num_classes), dtype=K.floatx())
 
-		# Cross-entropy loss by default
-		loss = 'categorical_crossentropy'
-
-		# Quadratic Weighted Kappa loss
-		if self.loss == 'qwk':
-			loss = qwk_loss(cost_matrix)
-		elif self.loss == 'msqwk':
-			loss = ms_n_qwk_loss(cost_matrix)
 
 		# Only accuracy for training.
 		# Computing QWK for training properly is too expensive
@@ -468,7 +474,7 @@ class Experiment:
 		# Compile the keras model
 		model.compile(
 			optimizer = # keras.optimizers.Nadam(lr=self.lr),
-			tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=0.9, nesterov=True),
+			tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=self._momentum, nesterov=True),
 			# keras.optimizers.Adam(lr=self.lr),
 			# keras.optimizers.RMSprop(lr=self.lr),
 			# keras.optimizers.Adagrad(lr=self.lr),
@@ -538,24 +544,22 @@ class Experiment:
 
 		for generator, step, set in zip(generators, steps, ['Train', 'Validation', 'Test']):
 			print('\n=== {} dataset ===\n'.format(set))
+			if self._cost_matrix==None:
+				self._cost_matrix = K.constant(make_cost_matrix(self._ds.num_classes), dtype=K.floatx())
 
-			# NNet object
-			#net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
-			#				 self.prob_layer, self._ds.num_channels, self._ds.num_classes, self.spp_alpha, self.dropout)
-
-			# model = self.get_model(net_object, self.net_type)
-			#model = net_object.build(self.net_type)
-
-			# Load weights
-			#model.load_weights(os.path.join(self.checkpoint_dir, self.best_model_file))
-			
-			model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file))
+			# Load model
+			if self._loss=='qwk':
+				loss= qwk_loss(self._cost_matrix)
+				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file),custom_objects={loss.__name__: loss})
+			elif self._loss=='msqwk':
+				loss= ms_n_qwk_loss(self._cost_matrix)
+				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file),custom_objects={loss.__name__: loss})
+			else:
+				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file))
 
 			# Get predictions
-			# generator.reset()
 			predictions = model.predict(generator, steps=step, verbose=1)
 
-			# generator.reset()
 			y_set = None
 			for x, y in generator:
 				y_set = np.array(y) if y_set is None else np.vstack((y_set, y))				
@@ -662,7 +666,7 @@ class Experiment:
 		self.prob_layer = 'prob_layer' in config and config['prob_layer'] or None
 		self.spp_alpha = 'spp_alpha' in config and config['spp_alpha'] or 0
 		self.lr = 'lr' in config and config['lr'] or 0.1
-		self.momentum = 'momentum' in config and config['momentum'] or 0
+		self.momentum = 'momentum' in config and config['momentum'] or 0.9
 		self.dropout = 'dropout' in config and config['dropout'] or 0
 		self.task = 'task' in config and config['task'] or 'both'
 		self.workers = 'workers' in config and config['workers'] or 4

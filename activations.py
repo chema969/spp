@@ -23,6 +23,7 @@ class SPP(tf.keras.layers.Layer):
 	def build(self, input_shape):
 		super(SPP, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		return K.softplus(inputs) - self.alpha
 
@@ -45,6 +46,8 @@ class SPPT(tf.keras.layers.Layer):
 
 		super(SPPT, self).build(input_shape)
 
+
+	@tf.function
 	def call(self, inputs, **kwargs):
 		return K.softplus(inputs) - self.alpha
 
@@ -58,7 +61,7 @@ def parametric_softplus(spp_alpha):
 	:param spp_alpha: alpha parameter for softplus function.
 	:return: parametric softplus activation value.
 	"""
-
+	@tf.function
 	def spp(x):
 		return K.log(1 + K.exp(x)) - spp_alpha
 
@@ -89,6 +92,8 @@ class MPELU(tf.keras.layers.Layer):
 		# Finish buildidng
 		super(MPELU, self).build(input_shape)
 
+
+	@tf.function
 	def call(self, inputs, **kwargs):
 		positive = tf.keras.activations.relu(inputs)
 		negative = self.alpha * (K.exp(-tf.keras.activations.relu(-inputs) * cons_greater_zero(self.beta)) - 1)
@@ -113,6 +118,8 @@ class RTReLU(tf.keras.layers.Layer):
 		# Finish building
 		super(RTReLU, self).build(input_shape)
 
+
+	@tf.function
 	def call(self, inputs, **kwargs):
 		return tf.keras.activations.relu(inputs + self.a)
 
@@ -134,6 +141,8 @@ class RTPReLU(tf.keras.layers.PReLU):
 		# Call PReLU build method
 		super(RTPReLU, self).build(input_shape)
 
+
+	@tf.function
 	def call(self, inputs, **kwargs):
 		pos = tf.keras.activations.relu(inputs + self.a)
 		neg = -self.alpha * tf.keras.activations.relu(-(inputs * self.a))
@@ -157,11 +166,14 @@ class PairedReLU(tf.keras.layers.Layer):
 		# Finish building
 		super(PairedReLU, self).build(input_shape)
 
+
+	@tf.function
 	def call(self, inputs, **kwargs):
 		return K.concatenate(
 			(tf.keras.activations.relu(self.scale * inputs - self.theta), tf.keras.activations.relu(-self.scale * inputs - self.theta_p)),
 			axis=len(inputs.get_shape()) - 1)
 
+	@tf.function
 	def compute_output_shape(self, input_shape):
 		shape = list(input_shape)
 		shape[-1]  = shape[-1] * 2
@@ -184,6 +196,7 @@ class EReLU(tf.keras.layers.Layer):
 		# Finish building
 		super(EReLU, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		# Generate random uniform tensor between [1-alpha, 1+alpha] for training and ones tensor for test (ReLU)
 		k = K.in_train_phase(K.random_uniform(inputs.shape[1:], 1 - self.alpha, 1 + self.alpha), K.ones(inputs.shape[1:]))
@@ -209,6 +222,7 @@ class EPReLU(tf.keras.layers.Layer):
 		# Finish building
 		super(EPReLU, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		# Generate random uniform tensor between [1-alpha, 1+alpha] for training and ones tensor for test
 		k = K.in_train_phase(K.random_uniform(inputs.shape[1:], 1 - self.alpha, 1 + self.alpha),
@@ -230,6 +244,7 @@ class SQRTActivation(tf.keras.layers.Layer):
 	def build(self, input_shape):
 		super(SQRTActivation, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		pos = K.sqrt(tf.keras.activations.relu(inputs))
 		neg = - K.sqrt(tf.keras.activations.relu(-inputs))
@@ -248,6 +263,7 @@ class RReLu(tf.keras.layers.Layer):
 
 		super(RReLu, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		# Generate random uniform alpha
 		alpha = K.in_train_phase(K.random_uniform(inputs.shape[1:], 0.0, 1.0), K.constant((0.0+1.0)/2.0, shape=inputs.shape[1:]))
@@ -276,6 +292,7 @@ class PELU(tf.keras.layers.Layer):
 
 		super(PELU, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		pos = (cons_greater_zero(self.alpha) / cons_greater_zero(self.beta)) * tf.keras.activations.relu(inputs)
 		neg = cons_greater_zero(self.alpha) * (K.exp((-tf.keras.activations.relu(-inputs)) / cons_greater_zero(self.beta)) - 1)
@@ -294,6 +311,7 @@ class SlopedReLU(tf.keras.layers.Layer):
 
 		super(SlopedReLU, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		return tf.keras.activations.relu(self.alpha * inputs)
 
@@ -313,6 +331,7 @@ class PTELU(tf.keras.layers.Layer):
 
 		super(PTELU, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		pos = tf.keras.activations.relu(inputs)
 		neg = self.alpha * K.tanh(- self.beta * tf.keras.activations.relu(-inputs))
@@ -348,6 +367,7 @@ class Antirectifier(tf.keras.layers.Layer):
 		shape[-1] *= 2
 		return tuple(shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		inputs -= K.mean(inputs, axis=1, keepdims=True)
 		inputs = K.l2_normalize(inputs, axis=1)
@@ -368,6 +388,7 @@ class CReLU(tf.keras.layers.Layer):
 		shape[-1] *= 2
 		return tuple(shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		pos = K.relu(inputs)
 		neg = K.relu(-inputs)
@@ -386,6 +407,7 @@ class CLM(tf.keras.layers.Layer):
 		self.use_tau = use_tau
 		super(CLM, self).__init__(**kwargs)
 
+	@tf.function
 	def _convert_thresholds(self, b, a):
 		a = K.pow(a, 2)
 		thresholds_param = K.concatenate([b, a], axis=0)
@@ -395,6 +417,7 @@ class CLM(tf.keras.layers.Layer):
 			axis=1)
 		return th
 
+	@tf.function
 	def _nnpom(self, projected, thresholds):
 		if self.use_tau == 1:
 			projected = K.reshape(projected, shape=[-1]) / self.tau
@@ -501,6 +524,7 @@ class CLM(tf.keras.layers.Layer):
 			self.__set_default_param('p', self.add_weight('p_clm', shape=(1,), initializer=tf.keras.initializers.Constant(0.5)))
 
 
+	@tf.function
 	def call(self, x, **kwargs):
 		thresholds = self._convert_thresholds(self.thresholds_b, self.thresholds_a)
 		return self._nnpom(x, thresholds)

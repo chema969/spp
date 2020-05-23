@@ -4,9 +4,11 @@ from multiprocessing import Pool
 from skimage.io import imread
 from functools import partial
 from itertools import repeat
+import tensorflow as tf
 import numpy as np
 import os
 import random
+
 
 def SORDencoder(y_labels,class_labels,num_classes, metric='absolute'):
     if metric=='squared':
@@ -58,6 +60,7 @@ def generate_random_augmentation(p, shape):
 
     return aug
 
+
 def random_crop(img, random_crop_size):
     # Note: image_data_format is 'channel_last'
     assert img.shape[2] == 3
@@ -68,6 +71,7 @@ def random_crop(img, random_crop_size):
     return img[y:(y+dy), x:(x+dx), :]
 
 # Process a single image
+
 def process_data(augmentation, x):
     # Apply data augmentation
     if len(augmentation) > 0:
@@ -159,6 +163,7 @@ class BigGenerator(Sequence):
         self._force_rgb = force_rgb
         self._labels=labels
         super(BigGenerator, self).__init__()
+
 
     def __len__(self):
         return int(np.ceil(self._df.shape[0] / float(self._batch_size)))

@@ -10,6 +10,7 @@ class GeometricLayer(tf.keras.layers.Layer):
 
 		super(GeometricLayer, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		return K.pow(1. - inputs, int(self.num_classes)) * inputs
 
@@ -21,6 +22,7 @@ class ScaleLayer(tf.keras.layers.Layer):
 	def build(self, input_shape):
 		super(ScaleLayer, self).build(input_shape)
 
+	@tf.function
 	def call(self, inputs, **kwargs):
 		_max = K.max(inputs)
 		_min = K.min(inputs)
