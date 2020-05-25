@@ -168,11 +168,13 @@ def np_quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=No
 
 @tf.function
 def top_2_accuracy(y_true, y_pred):
-	metric=tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
+	"""Computes the top 2 metric, that means if true classes are into the 2 with the most probability """
+    metric=tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
 	return tf.math.count_nonzero(metric)/tf.size(metric,out_type=tf.dtypes.int64)
 
 @tf.function
 def top_3_accuracy(y_true, y_pred):
+	"""Computes the top 2 metric, that means if true classes are into the 3 with the most probability """
 	metric=tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
 	return tf.math.count_nonzero(metric)/tf.size(metric,out_type=tf.dtypes.int64)
 

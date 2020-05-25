@@ -15,7 +15,7 @@ def SORDencoder(y_labels,class_labels,num_classes, metric='absolute'):
         cost_matrix=np.power(np.tile(class_labels, (num_classes, 1)) - np.reshape(class_labels, (-1,1)),2) / num_classes
     if metric=='squared_log':
         #Through the common use of a 0 label, I add an really low value to avoid infinite logarithm
-        cost_matrix=np.abs(np.log(np.tile(class_labels+0.00000001, (num_classes, 1))) - np.log(np.reshape(class_labels, (-1,1))+0.00000001)) / num_classes
+        cost_matrix=np.abs(np.log(np.tile(class_labels+0.00000001, (num_classes, 1))) - np.log(np.reshape(class_labels, (-1,1))+10e-9)) / num_classes
     else:
         #By default, absolute metric is used
         cost_matrix=np.abs(np.tile(class_labels, (num_classes, 1)) - np.reshape(class_labels, (-1,1))) / num_classes

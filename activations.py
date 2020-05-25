@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow_probability import distributions
 from tensorflow.keras import backend as K
 
+@tf.function
 def cons_greater_zero(value):
 	"""
 	Auxiliar function used to avoid zero in some of the layers values
