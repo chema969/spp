@@ -525,31 +525,35 @@ class Dataset:
 
 		return x_resized
 
-	def generate_train(self, batch_size, augmentation, encode):
+	def generate_train(self, batch_size, augmentation, encode, soft_ordinal_config):
 		# Load dataset if not loaded
 		self.load(self._name)
 		if self._big_dataset:
-			return BigGenerator(self._df_train, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size, augmentation=augmentation, encode=encode, 		labels=self._labels)
+			return BigGenerator(self._df_train, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size, augmentation=augmentation, encode=encode, 		labels=self._labels,soft_ordinal_config=soft_ordinal_config)
 		else:
-			return SmallGenerator(self._x_train, self._y_train, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size, augmentation=augmentation,encode=encode,labels=self._labels)
+			return SmallGenerator(self._x_train, self._y_train, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,augmentation=augmentation,encode=encode,
+	labels=self._labels,soft_ordinal_config=soft_ordinal_config)
 
-	def generate_val(self, batch_size, encode):
-		# Load dataset if not loaded
-		self.load(self._name)
-
-		if self._big_dataset:
-			return BigGenerator(self._df_val, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels)
-		else:
-			return SmallGenerator(self._x_val, self._y_val, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels)
-
-	def generate_test(self, batch_size, encode):
+	def generate_val(self, batch_size, encode,soft_ordinal_config):
 		# Load dataset if not loaded
 		self.load(self._name)
 
 		if self._big_dataset:
-			return BigGenerator(self._df_test, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train,encode=encode, batch_size=batch_size,labels=self._labels)
+			return BigGenerator(self._df_val, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels,
+	soft_ordinal_config=soft_ordinal_config)
+
 		else:
-			return SmallGenerator(self._x_test, self._y_test, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels)
+			return SmallGenerator(self._x_val, self._y_val, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels,soft_ordinal_config=soft_ordinal_config)
+
+	def generate_test(self, batch_size, encode,soft_ordinal_config):
+		# Load dataset if not loaded
+		self.load(self._name)
+
+		if self._big_dataset:
+			return BigGenerator(self._df_test, self._base_path, self._num_classes, self._x_col, self._y_col, mean=self.mean_train, std=self.std_train,encode=encode, batch_size=batch_size,labels=self._labels,
+	soft_ordinal_config=soft_ordinal_config)
+		else:
+			return SmallGenerator(self._x_test, self._y_test, self._num_classes, mean=self.mean_train, std=self.std_train, batch_size=batch_size,encode=encode,labels=self._labels,soft_ordinal_config=soft_ordinal_config)
 
 
 	def _check_dataframe_images(self, df, x_col, base_path):
