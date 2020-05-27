@@ -5,7 +5,7 @@ _libgcc_mutex=0.1=main
 _tflow_select=2.1.0=gpu
 absl-py=0.9.0=py36_0
 astor=0.8.0=py36_0
-astunparse=1.6.3=pypi_0
+#astunparse=1.6.3=pypi_0
 blas=1.0=mkl
 blinker=1.4=py36_0
 bzip2=1.0.8=h7b6447c_0
@@ -32,7 +32,7 @@ ffmpeg=4.0=hcdf2ecd_0
 fontconfig=2.13.0=h9420a91_0
 freeglut=3.0.0=hf484d3e_5
 freetype=2.9.1=h8a8886c_1
-gast=0.2.2=pypi_0
+#gast=0.2.2=pypi_0
 glib=2.63.1=h5a9c865_0
 google-auth=1.14.1=py_0
 google-auth-oauthlib=0.4.1=py_2
@@ -117,12 +117,12 @@ setuptools=46.4.0=py36_0
 sip=4.19.8=py36hf484d3e_0
 six=1.14.0=py36_0
 sqlite=3.31.1=h62c20be_1
-tensorboard=2.2.1=pypi_0
-tensorboard-plugin-wit=1.6.0.post3=pypi_0
+#tensorboard=2.2.1=pypi_0
+#tensorboard-plugin-wit=1.6.0.post3=pypi_0
 tensorflow=2.1.0=gpu_py36h2e5cdaa_0
-tensorflow-base=2.1.0=gpu_py36h6c5654b_0
-tensorflow-estimator=2.2.0=pypi_0
-tensorflow-gpu=2.2.0=pypi_0
+#tensorflow-base=2.1.0=gpu_py36h6c5654b_0
+#tensorflow-estimator=2.2.0=pypi_0
+#tensorflow-gpu=2.2.0=pypi_0
 termcolor=1.1.0=py36_1
 tk=8.6.8=hbc83047_0
 toolz=0.10.0=py_0

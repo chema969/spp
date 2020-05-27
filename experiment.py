@@ -51,7 +51,7 @@ class Experiment:
 		self._encode=encode		
 		self._cost_matrix=None
 		self._best_metric = None
-
+		self._optimizer = None
 		self._ds = None
 
 		# Model and results file names
@@ -470,15 +470,20 @@ class Experiment:
 		metrics = ['accuracy']
 
 		lr_decay = 1e-6
-
+		opt=tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=self._momentum, nesterov=True)
+		if self._optimizer=='Nadam':
+			opt=tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay)
+		elif self._optimizer=='Adam':
+			opt=tf.keras.optimizers.Adam(lr=self.lr, decay=lr_decay)
+		elif self._optimizer=='RMSprop':
+			opt=tf.keras.optimizers.RMSprop(lr=self.lr, decay=lr_decay)
+		elif self._optimizer=='Adagrad':
+			opt=tf.keras.optimizers.Adagrad(lr=self.lr, decay=lr_decay)
+		elif self._optimizer=='Adadelta':
+			opt=tf.keras.optimizers.Adadelta(lr=self.lr, decay=lr_decay)
 		# Compile the keras model
 		model.compile(
-			optimizer = # keras.optimizers.Nadam(lr=self.lr),
-			tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=self._momentum, nesterov=True),
-			# keras.optimizers.Adam(lr=self.lr),
-			# keras.optimizers.RMSprop(lr=self.lr),
-			# keras.optimizers.Adagrad(lr=self.lr),
-			# keras.optimizers.Adadelta(lr=self.lr),
+			optimizer =opt,
 			loss=loss, metrics=metrics
 		)
 
@@ -488,7 +493,7 @@ class Experiment:
 		print('Training on {self._ds.size_train()} samples, validating on {self._ds.size_val()} samples.')
 
 		# Run training
-		model.fit(self._ds.generate_train(self.batch_size, self.augmentation,self._encode), epochs=self.epochs,
+		model.fit(self._ds.generate_train(self.batch_size, self.augmentation,self._encode,self._soft_ordinal_config), epochs=self.epochs,
 							initial_epoch=start_epoch,
 							steps_per_epoch=self._ds.num_batches_train(self.batch_size),
 							callbacks=[tf.keras.callbacks.LearningRateScheduler(lr_scheduler),
@@ -501,7 +506,7 @@ class Experiment:
 							use_multiprocessing=False,
 							max_queue_size=self.queue_size,
 							class_weight=class_weight,
-							validation_data=self._ds.generate_val(self.batch_size,self._encode),
+							validation_data=self._ds.generate_val(self.batch_size,self._encode,self._soft_ordinal_config),
 							validation_steps=self._ds.num_batches_val(self.batch_size),
 							verbose=2
 							)
@@ -539,7 +544,7 @@ class Experiment:
 		all_metrics = {}
 
 		# Get the generators for train, validation and test
-		generators = [self._ds.generate_train(self.batch_size, {},self._encode), self._ds.generate_val(self.batch_size,self._encode), self._ds.generate_test(self.batch_size,self._encode)]
+		generators = [self._ds.generate_train(self.batch_size, {} ,self._encode, self._soft_ordinal_config), self._ds.generate_val(self.batch_size,self._encode,self._soft_ordinal_config), self._ds.generate_test(self.batch_size,self._encode,self._soft_ordinal_config)]
 		steps = [self._ds.num_batches_train(self.batch_size), self._ds.num_batches_val(self.batch_size), self._ds.num_batches_test(self.batch_size)]
 
 		for generator, step, set in zip(generators, steps, ['Train', 'Validation', 'Test']):
@@ -644,7 +649,9 @@ class Experiment:
 			'val_type' : self._val_type,
 			'holdout' : self._holdout,
 			'n_folds' : self._n_folds,
-			'encode'  : self._encode
+			'optimizer'  : self._optimizer,
+			'encode'  : self._encode,
+			'soft_ordinal_config'  : self._soft_ordinal_config
 		}
 
 	def set_config(self, config):
@@ -675,7 +682,9 @@ class Experiment:
 		self._val_type = 'val_type' in config and config['val_type'] or 'holdout'
 		self._holdout = 'holdout' in config and float(config['holdout']) or 0.2
 		self._n_folds = 'n_folds' in config and int(config['n_folds']) or 5
+		self._optimizer = 'optimizer' in config and config['optimizer'] or 'SGD'
 		self._encode = 'encode' in config and config['encode'] or 'one_hot'
+		self._soft_ordinal_config = 'soft_ordinal_config' in config and config['soft_ordinal_config'] or 'absolute'
 		if 'name' in config:
 			self.name = config['name']
 		else:
