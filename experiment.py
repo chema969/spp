@@ -51,7 +51,7 @@ class Experiment:
 		self._encode=encode		
 		self._cost_matrix=None
 		self._best_metric = None
-		self._optimizer= None
+
 		self._ds = None
 
 		# Model and results file names
@@ -312,7 +312,7 @@ class Experiment:
 
 	@property
 	def queue_size(self):
-		return self._queue_size
+		return self._workers
 
 	@queue_size.setter
 	def queue_size(self, queue_size):
@@ -322,18 +322,7 @@ class Experiment:
 	def queue_size(self):
 		del self._queue_size
 
-	@property
-	def optimizer(self):
-		return self._optimizer
 
-	@optimizer.setter
-	def optimizer(self, optimizer):
-		self._optimizer = optimizer
-
-	@optimizer.deleter
-	def optimizer(self):
-		del self._optimizer
-		
 	@property
 	def augmentation(self):
 		return self._augmentation
@@ -397,7 +386,9 @@ class Experiment:
 
 
 		# Get class weights based on frequency
-		class_weight = self._ds.get_class_weights()		
+		class_weight = self._ds.get_class_weights()
+		# class_weight = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100000.0])
+		
 
 		# Learning rate scheduler callback
 
@@ -423,9 +414,6 @@ class Experiment:
 						shutil.rmtree(os.path.join(self.checkpoint_dir, self.best_model_file))
 					tf.keras.models.save_model(model,os.path.join(self.checkpoint_dir, self.best_model_file))
 					print("Best model saved.")
-					with open(os.path.join(self.checkpoint_dir, self.model_file_extra), 'w') as f:
-						f.write(str(epoch + 1))
-						f.write('\n' + str(self.best_metric))
 			if(epoch%10==0):
 				if os.path.isdir(os.path.join(self.checkpoint_dir, self.model_file)):					
 					shutil.rmtree(os.path.join(self.checkpoint_dir, self.model_file))
@@ -482,21 +470,15 @@ class Experiment:
 		metrics = ['accuracy']
 
 		lr_decay = 1e-6
-		optimizer=tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=self._momentum, nesterov=True)
-		if self._optimizer=='Adam':
-			optimizer=tf.keras.optimizers.Adam(lr=self.lr,decay=lr_decay)
-		elif self._optimizer=='Nadam'
-			tf.keras.optimizers.Nadam(lr=self.lr,decay=lr_decay)
-		elif self._optimizer=='RMSprop'
-			tf.keras.optimizers.RMSprop(lr=self.lr,momentum=self._momentum,decay=lr_decay)
-		elif self._optimizer=='Adagrad'
-			tf.keras.optimizers.Adagrad(lr=self.lr,decay=lr_decay)
-		elif self._optimizer=='Adadelta'
-			tf.keras.optimizers.Adadelta(lr=self.lr,decay=lr_decay)
-		
+
 		# Compile the keras model
 		model.compile(
-			optimizer = optimizer,
+			optimizer = # keras.optimizers.Nadam(lr=self.lr),
+			tf.keras.optimizers.SGD(lr=self.lr, decay=lr_decay, momentum=self._momentum, nesterov=True),
+			# keras.optimizers.Adam(lr=self.lr),
+			# keras.optimizers.RMSprop(lr=self.lr),
+			# keras.optimizers.Adagrad(lr=self.lr),
+			# keras.optimizers.Adadelta(lr=self.lr),
 			loss=loss, metrics=metrics
 		)
 
@@ -662,8 +644,7 @@ class Experiment:
 			'val_type' : self._val_type,
 			'holdout' : self._holdout,
 			'n_folds' : self._n_folds,
-			'encode'  : self._encode,
-			'optimizer' : self._optimizer
+			'encode'  : self._encode
 		}
 
 	def set_config(self, config):
@@ -695,7 +676,6 @@ class Experiment:
 		self._holdout = 'holdout' in config and float(config['holdout']) or 0.2
 		self._n_folds = 'n_folds' in config and int(config['n_folds']) or 5
 		self._encode = 'encode' in config and config['encode'] or 'one_hot'
-		self._optimizer = 'optimizer' in config and config['optimizer'] or 'SGD'
 		if 'name' in config:
 			self.name = config['name']
 		else:

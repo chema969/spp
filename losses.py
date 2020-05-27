@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
-
+@tf.function
 def make_cost_matrix(num_ratings):
 	"""
 	Create a quadratic cost matrix of num_ratings x num_ratings elements.
