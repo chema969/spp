@@ -86,7 +86,7 @@ class SmallGenerator(Sequence):
     """
     Class to define a generator for small image size datasets
     """
-    def __init__(self, x, y, num_classes, mean=None, std=None, batch_size=128, augmentation={}, workers=7, encode='one_hot', labels=[],soft_ordinal_config='absolute'):
+    def __init__(self, x, y, num_classes, mean=None, std=None, batch_size=128, augmentation={}, workers=7, encode='one_hot', labels=[]):
         self._x = x
         self._y = y
         self._num_classes = num_classes
@@ -98,7 +98,6 @@ class SmallGenerator(Sequence):
         self._p = Pool(self._workers)
         self._encode = encode
         self._labels=labels
-        self._soft_ordinal_config=soft_ordinal_config
         super(SmallGenerator, self).__init__()
 
     def __len__(self):
@@ -119,7 +118,7 @@ class SmallGenerator(Sequence):
             batch_y = to_categorical(batch_y, num_classes=self._num_classes)
         
         elif self._encode=='soft_ordinal':
-            batch_y = SORDencoder(batch_y,self._labels,self._num_classes, self._soft_ordinal_config)
+            batch_y = SORDencoder(batch_y,self._labels,self._num_classes, metric='squared_log')
 
 
         return np.array(batch_x), np.array(batch_y)
@@ -148,7 +147,7 @@ class BigGenerator(Sequence):
     """
     Class to define a generator for big image size datasets
     """
-    def __init__(self, df, base_path, num_classes, x_col='x', y_col='y', mean=None, std=None, batch_size=128, augmentation={}, workers=7, encode='one_hot', force_rgb=True, labels=[],soft_ordinal_config='absolute'):
+    def __init__(self, df, base_path, num_classes, x_col='x', y_col='y', mean=None, std=None, batch_size=128, augmentation={}, workers=7, encode='one_hot', force_rgb=True, labels=[]):
         self._df = df
         self._base_path = base_path
         self._num_classes = num_classes
@@ -163,7 +162,6 @@ class BigGenerator(Sequence):
         self._encode = encode
         self._force_rgb = force_rgb
         self._labels=labels
-        self._soft_ordinal_config=soft_ordinal_config
         super(BigGenerator, self).__init__()
 
 
@@ -186,7 +184,7 @@ class BigGenerator(Sequence):
             batch_y = to_categorical(batch_y, num_classes=self._num_classes)
         
         elif self._encode=='soft_ordinal':
-            batch_y = SORDencoder(batch_y,self._labels,self._num_classes,self._soft_ordinal_config)
+            batch_y = SORDencoder(batch_y,self._labels,self._num_classes)
         
         return np.array(batch_x), np.array(batch_y)
 
