@@ -196,7 +196,6 @@ class EReLU(tf.keras.layers.Layer):
 		# Finish building
 		super(EReLU, self).build(input_shape)
 
-	@tf.function
 	def call(self, inputs, **kwargs):
 		# Generate random uniform tensor between [1-alpha, 1+alpha] for training and ones tensor for test (ReLU)
 		k = K.in_train_phase(K.random_uniform(inputs.shape[1:], 1 - self.alpha, 1 + self.alpha), K.ones(inputs.shape[1:]))
