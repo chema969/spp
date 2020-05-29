@@ -1,5 +1,6 @@
 import os
 import json
+import multiprocessing
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from experiment import Experiment
@@ -40,6 +41,23 @@ class ExperimentSet:
 				#Creates a generator with all executions and all experimets
 				yield experiment
 
+	def _run_one(self,gpu_number,experiment):
+		#Allow soft device placement, so in case the device is not found, TensorFlow will automatically choose an existing and supported device
+		tf.config.set_soft_device_placement(True)
+		physical_devices = tf.config.experimental.list_physical_devices('GPU')
+		try: 
+			tf.config.experimental.set_memory_growth(physical_devices[gpu_number], True)
+		except: 
+ 			# Invalid device or cannot modify virtual devices once initialized. 
+			pass 
+		os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_number)
+		with tf.device('/device:GPU:' + str(gpu_number)):
+			if not experiment.finished and experiment.task != 'test': # 'train' or 'both'
+				experiment.run()
+			if experiment.task != 'train': # 'test' or 'both'
+				experiment.evaluate()
+		# Clear session
+		K.clear_session()
 
 	def run_all(self, gpu_number=0):
 		"""
@@ -48,11 +66,6 @@ class ExperimentSet:
 		:return: None
 		"""
 		for experiment in self._generate_experiments():
-			os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_number)
-			with tf.device('/device:GPU:' + str(gpu_number)):
-				if not experiment.finished and experiment.task != 'test': # 'train' or 'both'
-					experiment.run()
-				if experiment.task != 'train': # 'test' or 'both'
-					experiment.evaluate()
-			# Clear session
-			K.clear_session()
+			process_eval = multiprocessing.Process(target=self._run_one,args=(gpu_number,experiment,))
+			process_eval.start()
+			process_eval.join()
