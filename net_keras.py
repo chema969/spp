@@ -418,7 +418,7 @@ class Net:
 			x = tf.keras.layers.BatchNormalization()(x)
 			x = CLM(self.num_classes, 'expgauss', self.f_a_params, use_tau=self.use_tau)(x)
 		elif self.final_activation == 'binomial':
-			_add_binom_m(model, self.num_classes, 1.0, 'sigm_learnable')
+			_add_binom_m(x, self.num_classes, 1.0, 'sigm_learnable')
 		else:
 			x = Dense(self.num_classes)(x)
 			if self.prob_layer == 'geometric':
