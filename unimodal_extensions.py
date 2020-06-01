@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-
+import tensorflow as tf
 from tensorflow.keras.layers import Layer, Input, Activation, Dense, Conv2D, MaxPool2D, AveragePooling2D, Flatten, Lambda
 from tensorflow.keras.initializers import Ones, constant
 from tensorflow.keras import backend as K
@@ -116,7 +116,7 @@ def _add_binom(layer, num_classes, tau, tau_mode, extra_depth=None, extra_depth_
     return l_logf
 
 
-def _add_binom_m(model, num_classes, tau, tau_mode, extra_depth=None, extra_depth_nonlinearity='relu'):
+def _add_binom_m( num_classes, tau, tau_mode, extra_depth=None, extra_depth_nonlinearity='relu'):
     """Añade el bloque final de la red que contiene la implementación de la distribución Binomial.
 
     :param end_nonlinearity: La no linealidad que se desea aplicar en la primera capa Dense de un nodo.
@@ -129,6 +129,7 @@ def _add_binom_m(model, num_classes, tau, tau_mode, extra_depth=None, extra_dept
     # NOTE: Weird Bug. This is numerically unstable when
     # deterministic=True with the article's resnet
     # so: Added eps, and added clip
+    model=tf.keras.Sequential()
     k = num_classes
     if extra_depth != None:
         model.add(Dense(units=extra_depth, activation=extra_depth_nonlinearity))
@@ -149,3 +150,4 @@ def _add_binom_m(model, num_classes, tau, tau_mode, extra_depth=None, extra_dept
         model.add(TauLayer(tau, bias=0., nonlinearity='sigmoid'))
     model.add(Activation('softmax'))
     # return model
+    return model
