@@ -13,7 +13,7 @@ from unimodal_extensions import _add_binom_m
 
 class Net:
 	def __init__(self, size, activation, final_activation, f_a_params={}, use_tau=True, prob_layer=None, num_channels=3,
-				 num_classes=5, spp_alpha=0.2, dropout=0):
+				 num_classes=5, spp_alpha=0.2, dropout=0, ensemble=False,ensemble_type='regression'):
 		self.size = size
 		self.activation = activation
 		self.final_activation = final_activation
@@ -24,6 +24,8 @@ class Net:
 		self.num_classes = num_classes
 		self.spp_alpha = spp_alpha
 		self.dropout = dropout
+		self.ensemble = ensemble
+		self.ensemble_type = ensemble_type
 	
 	"""
 	Function that return a model with the named passed by argument as net_model	
@@ -117,9 +119,26 @@ class Net:
 		x=Dense(4096)(x),
 		x=self.__activation()(x),
 		
+		if self.ensemble:
+			x=Dense(80)(x)
+			outputs=[]
 
-		x = self.__final_activation(x)
-		model = tf.keras.Model(input, x)		
+			
+			if self.ensemble_type=='doel3':
+				for num_s in range(self.num_classes):
+					aux=tf.keras.layers.Dense(3,activation='softmax',name=str(num_s))(x)
+					outputs.append(aux)
+			else:
+				for num_s in range(self.num_classes-1):
+					aux=tf.keras.layers.Dense(1,activation='sigmoid',name=str(num_s))(x)
+					outputs.append(aux)
+
+			model = tf.keras.Model(input, outputs)
+
+		else:
+			x = self.__final_activation(x)
+
+			model = tf.keras.Model(input, x)		
 		return model
 
 
@@ -274,10 +293,26 @@ class Net:
 
 		if self.dropout > 0:
 			x = Dropout(rate=self.dropout)(x)
+		
+		if self.ensemble:
+			x=Dense(80)(x)
+			outputs=[]
 
-		x = self.__final_activation(x)
+			if self.ensemble_type=='doel3':
+				for num_s in range(self.num_classes):
+					aux=tf.keras.layers.Dense(3,activation='softmax',name=str(num_s))(x)
+					outputs.append(aux)
+			else:
+				for num_s in range(self.num_classes-1):
+					aux=tf.keras.layers.Dense(1,activation='sigmoid',name=str(num_s))(x)
+					outputs.append(aux)
 
-		model = tf.keras.Model(input, x)
+			model = tf.keras.Model(input, outputs)
+
+		else:
+			x = self.__final_activation(x)
+
+			model = tf.keras.Model(input, x)
 
 		return model
 
@@ -305,10 +340,25 @@ class Net:
 		if self.dropout > 0:
 			x = tf.keras.layers.Dropout(rate=self.dropout)(x)
 
-		x = self.__final_activation(x)
+		if self.ensemble:
+			x=Dense(80)(x)
+			outputs=[]
 
-		model = tf.keras.Model(input, x)
+			if self.ensemble_type=='doel3':
+				for num_s in range(self.num_classes):
+					aux=tf.keras.layers.Dense(3,activation='softmax',name=str(num_s))(x)
+					outputs.append(aux)
+			else:
+				for num_s in range(self.num_classes-1):
+					aux=tf.keras.layers.Dense(1,activation='sigmoid',name=str(num_s))(x)
+					outputs.append(aux)
 
+			model = tf.keras.Model(input, outputs)
+
+		else:
+			x = self.__final_activation(x)
+
+			model = tf.keras.Model(input, x)
 		return model
 
 	"""
@@ -324,9 +374,25 @@ class Net:
 		if self.dropout > 0:
 			x = tf.keras.layers.Dropout(rate=self.dropout)(x)
 
-		x = self.__final_activation(x)
+		if self.ensemble:
+			x=Dense(80)(x)
 
-		model = tf.keras.Model(input, x)
+			outputs=[]
+			if self.ensemble_type=='doel3':
+				for num_s in range(self.num_classes):
+					aux=tf.keras.layers.Dense(3,activation='softmax',name=str(num_s))(x)
+					outputs.append(aux)
+			else:
+				for num_s in range(self.num_classes-1):
+					aux=tf.keras.layers.Dense(1,activation='sigmoid',name=str(num_s))(x)
+					outputs.append(aux)
+
+			model = tf.keras.Model(input, outputs)
+
+		else:
+			x = self.__final_activation(x)
+
+			model = tf.keras.Model(input, x)
 
 		return model
 

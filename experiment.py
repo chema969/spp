@@ -11,6 +11,8 @@ from metrics import np_quadratic_weighted_kappa, top_2_accuracy, top_3_accuracy,
 from dataset import Dataset
 from sklearn.metrics import confusion_matrix
 from tensorflow.keras import backend as K
+import sys
+
 
 class Experiment:
 	"""
@@ -53,6 +55,7 @@ class Experiment:
 		self._best_metric = None
 		self._optimizer = None
 		self._ds = None
+		self·_ensemble = False
 
 		# Model and results file names
 		self.model_file = 'model'
@@ -387,7 +390,6 @@ class Experiment:
 
 		# Get class weights based on frequency
 		class_weight = self._ds.get_class_weights()
-		# class_weight = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100000.0])
 		
 
 		# Learning rate scheduler callback
@@ -436,13 +438,17 @@ class Experiment:
 
 		# Cross-entropy loss by default
 		loss = 'categorical_crossentropy'
-
+		
 		# Quadratic Weighted Kappa loss
 		if self.loss == 'qwk':
 			loss = qwk_loss(self._cost_matrix)
 		elif self.loss == 'msqwk':
 			loss = ms_n_qwk_loss(self._cost_matrix)
-
+		if self._ensemble:
+			if self._ensemble_type=='doel3':
+				loss =tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+			else:
+				loss =tf.keras.losses.BinaryCrossentropy(from_logits=True)
 		# Check whether a saved model exists
 		if os.path.isdir(os.path.join(self.checkpoint_dir, self.model_file)):
 			print("===== RESTORING SAVED MODEL =====")
@@ -459,7 +465,7 @@ class Experiment:
 		else:
 			# NNet object
 			net_object = Net(self._ds.img_size, self.activation, self.final_activation, self.f_a_params, self.use_tau,
-						 self.prob_layer, self._ds.num_channels, self._ds.num_classes, self.spp_alpha, self.dropout)
+						 self.prob_layer, self._ds.num_channels, self._ds.num_classes, self.spp_alpha, self.dropout,self._ensemble,self._ensemble_type)
 
 			model = net_object.build(self.net_type)
 
@@ -490,10 +496,11 @@ class Experiment:
 		# Print model summary
 		model.summary()
 
-		print('Training on {self._ds.size_train()} samples, validating on {self._ds.size_val()} samples.')
 
-		# Run training
-		model.fit(self._ds.generate_train(self.batch_size, self.augmentation,self._encode,self._soft_ordinal_config), epochs=self.epochs,
+		print('Training on {self._ds.size_train()} samples, validating on {self._ds.size_val()} samples.')
+		if not self._ensemble:
+			# Run training
+			model.fit(self._ds.generate_train(self.batch_size, self.augmentation,self._encode,self._soft_ordinal_config), epochs=self.epochs,
 							initial_epoch=start_epoch,
 							steps_per_epoch=self._ds.num_batches_train(self.batch_size),
 							callbacks=[tf.keras.callbacks.LearningRateScheduler(lr_scheduler),
@@ -512,8 +519,28 @@ class Experiment:
 							)
 
 
-		self.finished = True
+			self.finished = True
+		else:
+			# Run training
+			model.fit(self._ds.generate_train(self.batch_size, self.augmentation,self._encode,self._soft_ordinal_config, ensemble=True, ensemble_train=True, ensemble_type=self._ensemble_type), epochs=self.epochs,
+							initial_epoch=start_epoch,
+							steps_per_epoch=self._ds.num_batches_train(self.batch_size),
+							callbacks=[tf.keras.callbacks.LearningRateScheduler(lr_scheduler),
+									   save_epoch_callback,
+									   tf.keras.callbacks.CSVLogger(os.path.join(self.checkpoint_dir, self.csv_file),
+																	append=True),
+									   tf.keras.callbacks.EarlyStopping(min_delta=0.0005, patience=40, verbose=1)
+									   ],
+							workers=self.workers,
+							use_multiprocessing=False,
+							max_queue_size=self.queue_size,
+							validation_data=self._ds.generate_val(self.batch_size,self._encode,self._soft_ordinal_config, ensemble=True, ensemble_type=self._ensemble_type),
+							validation_steps=self._ds.num_batches_val(self.batch_size),
+							verbose=2
+							)
 
+
+			self.finished = True
 		# Mark the training as finished in the checkpoint file
 		with open(os.path.join(self.checkpoint_dir, self.model_file_extra), 'w') as f:
 			f.write(str(self.epochs))
@@ -542,9 +569,12 @@ class Experiment:
 			return
 
 		all_metrics = {}
-
+		import sys
+		np.set_printoptions(threshold=sys.maxsize)
 		# Get the generators for train, validation and test
-		generators = [self._ds.generate_train(self.batch_size, {} ,self._encode, self._soft_ordinal_config), self._ds.generate_val(self.batch_size,self._encode,self._soft_ordinal_config), self._ds.generate_test(self.batch_size,self._encode,self._soft_ordinal_config)]
+		generators = [self._ds.generate_train(self.batch_size, {} ,self._encode, self._soft_ordinal_config,self._ensemble,ensemble_type=self._ensemble_type), 
+		self._ds.generate_val(self.batch_size,self._encode,self._soft_ordinal_config,self._ensemble,ensemble_type=self._ensemble_type), 
+		self._ds.generate_test(self.batch_size,self._encode,self._soft_ordinal_config,self._ensemble,ensemble_type=self._ensemble_type)]
 		steps = [self._ds.num_batches_train(self.batch_size), self._ds.num_batches_val(self.batch_size), self._ds.num_batches_test(self.batch_size)]
 
 		for generator, step, set in zip(generators, steps, ['Train', 'Validation', 'Test']):
@@ -566,10 +596,57 @@ class Experiment:
 			predictions = model.predict(generator, steps=step, verbose=1)
 
 			y_set = None
-			for x, y in generator:
-				y_set = np.array(y) if y_set is None else np.vstack((y_set, y))				
+			if not self._ensemble:
+				for x, y in generator:
+					y_set = np.array(y) if y_set is None else np.vstack((y_set, y))
+				metrics = self.compute_metrics(y_set, predictions, self._ds.num_classes)
+
+			else:
+				for x, y in generator:
+					y_set = y if y_set is None else [np.vstack((j, k)) for j,k in zip(y_set,y)]
 				
-			metrics = self.compute_metrics(y_set, predictions, self._ds.num_classes)
+				if self._ensemble_type=='doel3':
+					def create_mat3(y,size):
+						u=np.triu(np.ones([size,size]),1)
+						i=np.identity(size)
+						o=np.tril(np.ones([size,size]),-1)
+						ou=np.array([o,i,u])
+						prediction=None
+						for j in range(y[0].size):
+							matrix =[ou[int(y[i][j])][i] for i in range(size)]
+							prediction=np.array(np.argmax(np.sum(matrix,0))) if prediction is None else np.hstack((prediction,np.argmax(np.sum(matrix,0))))
+						return prediction
+
+					predict=[np.argmax(ar,axis=1) for ar in predictions]
+					y_set_aux=[np.argmax(ar,axis=1) for ar in y_set]
+
+					ens_predictions=tf.keras.utils.to_categorical(create_mat3(predict,self._ds.num_classes),num_classes=self._ds.num_classes)
+					ens_y=tf.keras.utils.to_categorical(create_mat3(y_set_aux,self._ds.num_classes),num_classes=self._ds.num_classes)
+
+				else:
+					"""Firstly, we transform the array of predictions """ 
+					predict=[np.squeeze(np.transpose(np.round(ar))).astype(int) for ar in predictions]
+					y_set_aux=[np.squeeze(np.transpose(ar)).astype(int) for ar in y_set]
+					
+					if self._ensemble_type=='doel2':
+						def create_mat(y,size):
+							u=np.triu(np.ones([size-1,size]),1)
+							o=np.tril(np.ones([size-1,size]))
+							ou=np.array([o,u])
+							prediction=None
+							for j in range(y[0].size):
+								matrix =[ou[y[i][j]][i] for i in range(size-1)]
+								prediction=np.array(np.argmax(np.sum(matrix,0))) if prediction is None else np.hstack((prediction,np.argmax(np.sum(matrix,0))))
+							return np.array(prediction)
+
+						ens_predictions=tf.keras.utils.to_categorical(create_mat(predict,self._ds.num_classes),num_classes=self._ds.num_classes)
+						ens_y=tf.keras.utils.to_categorical(np.sum(y_set_aux,axis=0),num_classes=self._ds.num_classes)
+
+					else:
+						ens_predictions=tf.keras.utils.to_categorical(np.sum(predict,axis=0),num_classes=self._ds.num_classes)
+						ens_y=tf.keras.utils.to_categorical(np.sum(y_set_aux,axis=0),num_classes=self._ds.num_classes)
+				metrics = self.compute_metrics(ens_y,ens_predictions,self._ds.num_classes)
+
 			self.print_metrics(metrics)
 
 			all_metrics[set] = metrics
@@ -582,6 +659,7 @@ class Experiment:
 		# Calculate metric
 		qwk = np_quadratic_weighted_kappa(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1), 0,
 										  num_classes - 1)
+										  		
 		ms = minimum_sensitivity(y_true, y_pred)
 		mae = mean_absolute_error(y_true, y_pred)
 		omae = overall_mean_squared_error(y_true, y_pred)
@@ -651,7 +729,9 @@ class Experiment:
 			'n_folds' : self._n_folds,
 			'optimizer'  : self._optimizer,
 			'encode'  : self._encode,
-			'soft_ordinal_config'  : self._soft_ordinal_config
+			'soft_ordinal_config'  : self._soft_ordinal_config,
+			'ensemble' : self._ensemble,
+			'ensemble_type' : self._ensemble_type
 		}
 
 	def set_config(self, config):
@@ -685,6 +765,8 @@ class Experiment:
 		self._optimizer = 'optimizer' in config and config['optimizer'] or 'SGD'
 		self._encode = 'encode' in config and config['encode'] or 'one_hot'
 		self._soft_ordinal_config = 'soft_ordinal_config' in config and config['soft_ordinal_config'] or 'absolute'
+		self._ensemble = config['ensemble'] if 'ensemble' in config and config['ensemble'] else False
+		self._ensemble_type = config['ensemble_type'] if 'ensemble_type' in config and config['ensemble_type'] else 'regression'
 		if 'name' in config:
 			self.name = config['name']
 		else:
