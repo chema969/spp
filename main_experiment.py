@@ -1,6 +1,5 @@
 import click
 import datetime
-from experiment import Experiment
 from experimentset import ExperimentSet
 import tensorflow as tf
 

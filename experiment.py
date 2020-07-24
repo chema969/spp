@@ -452,13 +452,13 @@ class Experiment:
 		# Check whether a saved model exists
 		if os.path.isdir(os.path.join(self.checkpoint_dir, self.model_file)):
 			print("===== RESTORING SAVED MODEL =====")
-			if loss != 'categorical_crossentropy':
+			if loss == 'qwk' or loss=='msqwk':
 				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file),custom_objects={loss.__name__: loss})
 			else:
 				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.model_file))
 		elif os.path.isdir(os.path.join(self.checkpoint_dir, self.best_model_file)):
 			print("===== RESTORING SAVED BEST MODEL =====")
-			if loss != 'categorical_crossentropy':
+			if loss == 'qwk' or loss=='msqwk':
 				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file),custom_objects={loss.__name__: loss})
 			else:
 				model=tf.keras.models.load_model(os.path.join(self.checkpoint_dir, self.best_model_file))
@@ -614,14 +614,14 @@ class Experiment:
 						prediction=None
 						for j in range(y[0].size):
 							matrix =[ou[int(y[i][j])][i] for i in range(size)]
-							prediction=np.array(np.argmax(np.sum(matrix,0))) if prediction is None else np.hstack((prediction,np.argmax(np.sum(matrix,0))))
+							prediction=np.array(np.sum(matrix,0)/size) if prediction is None else np.vstack((prediction,np.sum(matrix,0)/size))
 						return prediction
 
 					predict=[np.argmax(ar,axis=1) for ar in predictions]
 					y_set_aux=[np.argmax(ar,axis=1) for ar in y_set]
 
-					ens_predictions=tf.keras.utils.to_categorical(create_mat3(predict,self._ds.num_classes),num_classes=self._ds.num_classes)
-					ens_y=tf.keras.utils.to_categorical(create_mat3(y_set_aux,self._ds.num_classes),num_classes=self._ds.num_classes)
+					ens_predictions=create_mat3(predict,self._ds.num_classes).astype("float32")
+					ens_y=create_mat3(y_set_aux,self._ds.num_classes).astype("float32")
 
 				else:
 					"""Firstly, we transform the array of predictions """ 
@@ -636,10 +636,10 @@ class Experiment:
 							prediction=None
 							for j in range(y[0].size):
 								matrix =[ou[y[i][j]][i] for i in range(size-1)]
-								prediction=np.array(np.argmax(np.sum(matrix,0))) if prediction is None else np.hstack((prediction,np.argmax(np.sum(matrix,0))))
+								prediction=np.array(np.sum(matrix,0)/(size-1)) if prediction is None else np.vstack((prediction,np.sum(matrix,0)/(size-1)))
 							return np.array(prediction)
 
-						ens_predictions=tf.keras.utils.to_categorical(create_mat(predict,self._ds.num_classes),num_classes=self._ds.num_classes)
+						ens_predictions=create_mat(predict,self._ds.num_classes).astype("float32")
 						ens_y=tf.keras.utils.to_categorical(np.sum(y_set_aux,axis=0),num_classes=self._ds.num_classes)
 
 					else:
