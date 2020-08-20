@@ -403,6 +403,9 @@ class Experiment:
 
 		# Save epoch callback for training process
 		def save_epoch(epoch, logs):
+			if not os.access(self.checkpoint_dir, os.W_OK):
+				print('WARNING: Writting permission denied, callbacks will be not written')
+				return
 			# Check whether new metric is better than best metric
 			try:
 				logs['val_loss']
@@ -444,6 +447,8 @@ class Experiment:
 			loss = qwk_loss(self._cost_matrix)
 		elif self.loss == 'msqwk':
 			loss = ms_n_qwk_loss(self._cost_matrix)
+		elif self.loss != 'categorical_crossentropy' :
+			print("WARNING: Wrong loss value. Using categorical_crossentropy as loss function")
 		if self._ensemble:
 			if self._ensemble_type=='doel3':
 				loss =tf.keras.losses.CategoricalCrossentropy(from_logits=True)
@@ -487,6 +492,8 @@ class Experiment:
 			opt=tf.keras.optimizers.Adagrad(lr=self.lr, decay=lr_decay)
 		elif self._optimizer=='Adadelta':
 			opt=tf.keras.optimizers.Adadelta(lr=self.lr, decay=lr_decay)
+		elif self._optimizer!='SGD':
+			print("WARNING: Wrong optimizer value. Using stochastic gradiend descent as optimizer")
 		# Compile the keras model
 		model.compile(
 			optimizer =opt,
@@ -569,8 +576,6 @@ class Experiment:
 			return
 
 		all_metrics = {}
-		import sys
-		np.set_printoptions(threshold=sys.maxsize)
 		# Get the generators for train, validation and test
 		generators = [self._ds.generate_train(self.batch_size, {} ,self._encode, self._soft_ordinal_config,self._ensemble,ensemble_type=self._ensemble_type), 
 		self._ds.generate_val(self.batch_size,self._encode,self._soft_ordinal_config,self._ensemble,ensemble_type=self._ensemble_type), 
@@ -742,8 +747,20 @@ class Experiment:
 		"""
 		self.db = 'db' in config and config['db'] or 'cifar10'
 		self.net_type = 'net_type' in config and config['net_type'] or 'vgg19'
-		self.batch_size = 'batch_size' in config and int(config['batch_size']) or 128
-		self.epochs = 'epochs' in config and config['epochs'] or 100
+		
+		try:
+			self.batch_size = 'batch_size' in config and int(config['batch_size']) or 128
+		except ValueError:
+			print("WARNING: Invalid value of batch size, using 128 as value")
+			self.batch_size = 128		
+
+		try:
+			self.epochs = 'epochs' in config and int(config['epochs']) or 100
+		except ValueError:
+			print("WARNING: Invalid quantity or epochs, using 100 as value")
+			self.epochs = 100
+
+		
 		self.checkpoint_dir = 'checkpoint_dir' in config and config['checkpoint_dir'] or 'results'
 		self.loss = 'loss' in config and config['loss'] or 'categorical_crossentropy'
 		self.activation = 'activation' in config and config['activation'] or 'relu'
@@ -752,16 +769,39 @@ class Experiment:
 		self.use_tau = config['use_tau'] if 'use_tau' in config and config['use_tau'] else False
 		self.prob_layer = 'prob_layer' in config and config['prob_layer'] or None
 		self.spp_alpha = 'spp_alpha' in config and config['spp_alpha'] or 0
-		self.lr = 'lr' in config and config['lr'] or 0.1
-		self.momentum = 'momentum' in config and config['momentum'] or 0.9
+
+		try:
+			self.lr = 'lr' in config and float(config['lr']) or 0.1
+		except ValueError:
+			print("WARNING: Invalid value for learning rate, using 0.1 as value")
+			self.lr = 0.1
+
+		try:
+			self.momentum = 'momentum' in config and float(config['momentum']) or 0.9
+		except ValueError:
+			print("WARNING: Invalid value for momentum, using 0.9 as value")
+			self.momentum = 0.9
+
 		self.dropout = 'dropout' in config and config['dropout'] or 0
 		self.task = 'task' in config and config['task'] or 'both'
 		self.workers = 'workers' in config and config['workers'] or 4
 		self.queue_size = 'queue_size' in config and config['queue_size'] or 1024
 		self.augmentation = 'augmentation' in config and config['augmentation'] or {}
 		self._val_type = 'val_type' in config and config['val_type'] or 'holdout'
-		self._holdout = 'holdout' in config and float(config['holdout']) or 0.2
-		self._n_folds = 'n_folds' in config and int(config['n_folds']) or 5
+
+
+		try:
+			self._holdout = 'holdout' in config and float(config['holdout']) or 0.2
+		except ValueError:
+			print("WARNING: Invalid percentage of holdout, using 0.2 as value")
+			self._holdout = 0.2
+
+		try:
+			self._n_folds = 'n_folds' in config and int(config['n_folds']) or 5
+		except ValueError:
+			print("WARNING: Invalid quantity of folds, using 5 as value")
+			self._n_folds = 5
+
 		self._optimizer = 'optimizer' in config and config['optimizer'] or 'SGD'
 		self._encode = 'encode' in config and config['encode'] or 'one_hot'
 		self._soft_ordinal_config = 'soft_ordinal_config' in config and config['soft_ordinal_config'] or 'absolute'
@@ -776,7 +816,37 @@ class Experiment:
 		# Load dataset
 		self._ds = Dataset(self._db)
 
+		self._check_validation()
 		self._setup_validation()
+
+	def _check_validation(self):
+		"""
+		Chech correct object config
+		:return: None
+		"""
+		if self.batch_size <= 0:
+			print("WARNING: Invalid value of batch size, using 128 as value")
+			self.batch_size = 128
+
+		if self.epochs <= 0:
+			print("WARNING: Invalid quantity or epochs, using 100 as value")
+			self.epochs = 100
+
+		if self.lr <= 0 or self.lr > 1:
+			print("WARNING: Invalid value for learning rate, using 0.1 as value")
+			self.lr = 0.1			
+	
+		if self.momentum <= 0 or self.momentum > 1:	
+			print("WARNING: Invalid value for momentum, using 0.9 as value")
+			self.momentum = 0.9
+
+		if self._holdout <= 0 or self._holdout >= 1:
+			print("WARNING: Invalid percentage of holdout, using 0.2 as value")
+			self._holdout = 0.2
+
+		if self._n_folds <= 0:
+			print("WARNING: Invalid number of folds, using 5 as value")
+			self._n_folds = 5
 
 	def _setup_validation(self):
 		if self._ds is None:
