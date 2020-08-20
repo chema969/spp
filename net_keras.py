@@ -24,6 +24,13 @@ class Net:
 		self.num_classes = num_classes
 		self.spp_alpha = spp_alpha
 		self.dropout = dropout
+		if type(self.dropout) in (float,int):
+			if not self.dropout>=0 and self.dropout<1:
+				print('WARNING: Not valid value as dropout, using 0.')
+				self.dropout=0
+		else:
+			print('WARNING: Not valid value as dropout, using 0.')
+			self.dropout=0
 		self.ensemble = ensemble
 		self.ensemble_type = ensemble_type
 	
@@ -33,10 +40,13 @@ class Net:
 	:return: name model in case it exist
 	"""
 	def build(self, net_model):
-		if hasattr(self, net_model):
-			return getattr(self, net_model)()
+		if type(net_model)==str:
+			if hasattr(self, net_model):
+				return getattr(self, net_model)()
+			else:
+				raise Exception('Invalid network model.')
 		else:
-			raise Exception('Invalid network model.')
+			raise TypeError('The net name key shall be a string type')
 
 
 	"""
@@ -443,6 +453,7 @@ class Net:
 		elif self.activation == 'crelu':
 			return CReLU()
 		else:
+			print('WARNING: The',self.activation,'value is not valid as activation layer, using ReLU instead')
 			return tf.keras.layers.Activation('relu')
 
 	"""
@@ -489,6 +500,13 @@ class Net:
 			x = Dense(self.num_classes)(x)
 			if self.prob_layer == 'geometric':
 				x = GeometricLayer()(x)
-			x = tf.keras.layers.Activation(self.final_activation)(x)
+			try:
+				tf.keras.layers.Activation(self.final_activation)
+			except ValueError:
+				print('WARNING: The',self.final_activation,'value is not valid as final activation layer, using softmax instead')
+				x=tf.keras.layers.Activation('softmax')(x)
+			else:
+				x=tf.keras.layers.Activation(self.final_activation)(x)
+			 
 
 		return x
