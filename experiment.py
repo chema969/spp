@@ -55,7 +55,7 @@ class Experiment:
 		self._best_metric = None
 		self._optimizer = None
 		self._ds = None
-		self·_ensemble = False
+		self._ensemble = False
 
 		# Model and results file names
 		self.model_file = 'model'
